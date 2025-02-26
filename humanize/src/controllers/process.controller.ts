@@ -32,7 +32,7 @@ async function humanize(generatedText: string): Promise<{
     }
   );
 
-  const taskId = humbotCreateResponse.data.data.task_id;
+  const taskId = humbotCreateResponse?.data?.data?.task_id;
   console.log("Task Id", taskId);
 
   // Poll Humbot API for task completion
