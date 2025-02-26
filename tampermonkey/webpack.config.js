@@ -16,7 +16,7 @@ module.exports = {
 // @version      1.0
 // @description  Automatic writing assistant
 // @author       Revolt
-// @match        https://*/*
+// @match        https://r22.core.learn.edgenuity.com/player/
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
