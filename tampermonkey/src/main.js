@@ -16,7 +16,7 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
       : null;
   }
 
-  function submitWriting(submitBtn, questions, answers) {
+  function submitWriting(submitBtn, questions, answers, scores) {
     submitBtn.click();
     console.log("Clicked!!!!");
 
@@ -29,11 +29,7 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
         console.log("gradeBar:", gradeBar, number);
         if (number.textContent.trim() === "100") {
           console.log("Answers:", answers);
-          const response = await getHumanScore(answers);
-          const scores = response.humanScore;
-
           console.log("Scores:", scores);
-          displayHumanElement(scores, "Human Score", 170);
 
           if (scores) {
             if (typeof scores === "number") {
@@ -115,7 +111,7 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
     return mistakeTypes[mistakeType](word);
   }
 
-  function createTypingAnimation(editor, text, config, onComplete) {
+  async function createTypingAnimation(editor, text, config, onComplete) {
     const words = text.split(" ");
     let currentIndex = 0;
     editor.setData("");
@@ -125,6 +121,9 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
     const placeholderEnabled = config.placeholder === "Enabled";
     const placeholderText =
       "This topic has many sides to consider, each offering unique insights required to understand.";
+
+    // Skip placeholder if this is a placeholder typing call
+    const isPlaceholderCall = text === placeholderText;
 
     const typeText = async (textToType, isPlaceholder = false) => {
       return new Promise((resolve) => {
@@ -163,9 +162,9 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
               if (!isPlaceholder && !mistakeMode && letterIndex === 0) {
                 const mistakeChance =
                   {
-                    "Level 1": 0.05,
-                    "Level 2": 0.15,
-                    "Level 3": 0.25,
+                    "Level 1": 0.1,
+                    "Level 2": 0.25,
+                    "Level 3": 0.4,
                   }[typingStyle] || 0;
 
                 mistakeMode = Math.random() < mistakeChance;
@@ -235,21 +234,17 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
     };
 
     const startTyping = async () => {
-      if (placeholderEnabled) {
-        // Type placeholder first
+      // Only handle placeholder if this is not a placeholder typing call
+      if (placeholderEnabled && !isPlaceholderCall) {
         await typeText(placeholderText, true);
-        // Wait a bit to simulate thinking
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        // Delete placeholder
         await deletePlaceholder();
-        // Wait a bit before typing real answer
         await new Promise((resolve) => setTimeout(resolve, 1000));
       }
 
-      // Type actual answer
-      await typeText(text, false);
+      // Type the main text
+      await typeText(text, isPlaceholderCall);
 
-      // Complete the animation
       if (onComplete) onComplete();
     };
 
@@ -262,11 +257,10 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
   async function activateAutomaticWriting() {
     console.log("Get started!!!~~~~~~~~~~~!!!");
 
-    // 1. INITIALIZE THE DRAGGABLE MENU
     initDraggableMenu((conf) => {
       console.log("Config:", conf);
       config = conf;
-    }); // <--- Add this line to show the UI
+    });
 
     const stageFrame = getStageFrame();
     if (!stageFrame) return;
@@ -274,7 +268,7 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
     interval = setInterval(async () => {
       if (stop) {
         console.log("Stopping script because pastContent is detected.");
-        clearInterval(interval); // Stop the script from running further
+        clearInterval(interval);
         return;
       }
 
@@ -295,7 +289,7 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
         if (pastContent) {
           stop = true;
           const scores = 77;
-          displayHumanElement(scores, "Human Score", 170);
+          displayHumanElement("Human Score", scores);
           clearInterval(interval); // Stop execution
         }
         return;
@@ -314,7 +308,6 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
       const links = stageFrame.contentDocument?.querySelectorAll(
         "#contentViewer #OnlineContent-Links .weblink"
       );
-
       console.log("Links:", links);
 
       if (!links?.length) {
@@ -328,30 +321,70 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
           stageFrame.contentWindow.CKEDITOR.instances["Answer"] ||
           stageFrame.contentWindow.CKEDITOR.instances["essay-Content"];
 
-        editor.setData("Sit tight while Revolt generates a response... ✨");
-
         try {
-          // const res = await getAnswer(text?.innerText);
-          // console.log(res);
-          // const answer = res.humanizedText;
-          // console.log("Answer:", answer);
+          displayHumanElement("Human Score");
 
-          const answer = `The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.
-          The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.
-          The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.
-          `;
+          // Create a promise that resolves after placeholder typing or immediately if disabled
+          const placeholderPromise =
+            config.placeholder === "Enabled"
+              ? new Promise((resolve) => {
+                  const placeholderText =
+                    "This topic has many sides to consider, each offering unique insights required to understand.";
+                  editor.setData(""); // Clear any existing content
+                  createTypingAnimation(
+                    editor,
+                    placeholderText,
+                    { ...config, typingStyle: "None" },
+                    () => {
+                      // Then backspace it character by character
+                      let text = placeholderText;
+                      const backspaceInterval = setInterval(() => {
+                        if (text.length > 0) {
+                          text = text.slice(0, -1);
+                          editor.setData(text);
+                        } else {
+                          clearInterval(backspaceInterval);
+                          resolve();
+                        }
+                      }, 50); // Backspace every 50ms
+                    }
+                  );
+                })
+              : Promise.resolve();
 
-          createTypingAnimation(editor, answer, config, () => {
-            const submitBtn =
-              stageFrame.contentWindow.document.getElementById(
-                "SubmitButton"
-              ) ||
-              stageFrame.contentWindow.document.querySelector(
-                ".uibtn.uibtn-blue.uibtn-med.uibtn-alt"
-              );
-            submitBtn.disabled = false;
-            submitWriting(submitBtn, text?.innerText, answer);
-          });
+          // Wait for both placeholder typing and 5-second delay
+          const [res, _] = await Promise.all([
+            getAnswer(text?.innerText),
+            placeholderPromise,
+          ]);
+          console.log(res);
+          const answer = res.humanizedText;
+          console.log("Journal Answer:", answer);
+
+          const response = await getHumanScore(answer);
+          const scores = response.humanScore;
+          console.log("Journal scores:", scores);
+          displayHumanElement("Human Score", scores);
+
+          createTypingAnimation(
+            editor,
+            answer,
+            {
+              ...config,
+              placeholder: "Disabled",
+            },
+            () => {
+              const submitBtn =
+                stageFrame.contentWindow.document.getElementById(
+                  "SubmitButton"
+                ) ||
+                stageFrame.contentWindow.document.querySelector(
+                  ".uibtn.uibtn-blue.uibtn-med.uibtn-alt"
+                );
+              submitBtn.disabled = false;
+              submitWriting(submitBtn, text?.innerText, answer, scores);
+            }
+          );
         } catch (error) {
           console.error("Error:", error);
         }
@@ -366,22 +399,51 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
 
         Object.keys(stageFrame.contentWindow.CKEDITOR.instances).forEach(
           async (key) => {
-            console.log("Key:", key);
             const editor = stageFrame.contentWindow.CKEDITOR.instances[key];
             const question = stageFrame.contentDocument
               .getElementById(editor.name)
               ?.parentElement?.querySelector("p")?.innerText;
             console.log("Question:", question);
 
-            let siteNumber = question?.match(/\( *Site *[0-9]+ *\)/g)?.join("");
-            siteNumber = siteNumber?.replace(/\( *Site *([0-9]+) *\)/, "$1");
-
-            editor.setData("Sit tight while Revolt generates a response... ✨");
-
-            let answers = [],
-              questions = [];
-
             try {
+              // Create a promise for placeholder typing
+              const placeholderPromise =
+                config.placeholder === "Enabled"
+                  ? new Promise((resolve) => {
+                      const placeholderText =
+                        "This topic has many sides to consider, each offering unique insights required to understand.";
+                      editor.setData(""); // Clear any existing content
+
+                      // First type the placeholder text
+                      createTypingAnimation(
+                        editor,
+                        placeholderText,
+                        { ...config, typingStyle: "None" },
+                        () => {
+                          // Then backspace it character by character
+                          let text = placeholderText;
+                          const backspaceInterval = setInterval(() => {
+                            if (text.length > 0) {
+                              text = text.slice(0, -1);
+                              editor.setData(text);
+                            } else {
+                              clearInterval(backspaceInterval);
+                              resolve();
+                            }
+                          }, 50); // Backspace every 50ms
+                        }
+                      );
+                    })
+                  : Promise.resolve();
+
+              let siteNumber = question
+                ?.match(/\( *Site *[0-9]+ *\)/g)
+                ?.join("");
+              siteNumber = siteNumber?.replace(/\( *Site *([0-9]+) *\)/, "$1");
+
+              let answers = [],
+                questions = [];
+
               const endpoint = siteNumber
                 ? links[parseInt(siteNumber) - 1]?.getAttribute("href")
                 : links[0]?.getAttribute("href");
@@ -416,9 +478,26 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
                 editor.setData(extractedText);
                 answered++;
               } else {
-                // const res = await getAnswer(extractedText + "\n" + question);
-                // const answer = res.humanizedText.replace(/\*/g, "");
-                const answer = `The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.`;
+                displayHumanElement("Human Score");
+
+                //   const answer = `The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.
+                // The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.
+                // The High Renaissance – my most favored period in art history. It's just the coolest thing, isn't it? The years from 15th to 17th century Italy Florence, Rome and Venice were home to some of the most iconic artists and works we see among us that inspires us till the date.
+                // `;
+
+                // Wait for both placeholder typing and 5-second delay
+                const [res, _] = await Promise.all([
+                  getAnswer(extractedText),
+                  placeholderPromise,
+                ]);
+
+                const answer = res.humanizedText;
+                console.log("Online Content Answer:", answer);
+
+                const response = await getHumanScore(answer);
+                const scores = response.humanScore;
+                console.log("Online Content scores:", scores);
+                displayHumanElement("Human Score", scores);
                 answers.push(answer);
                 questions.push(question);
 
@@ -434,18 +513,13 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
                           "SubmitQuestionsButton"
                         );
                       submitBtn.disabled = false;
-                      submitWriting(
-                        submitBtn,
-                        questions,
-                        answers,
-                        needToAnswer
-                      );
+                      submitWriting(submitBtn, questions, answers, scores);
                     }
                   });
                 }
               }
             } catch (error) {
-              console.error("Error processing link:", error);
+              console.error("Error processing answer:", error);
             }
           }
         );
