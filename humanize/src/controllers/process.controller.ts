@@ -88,6 +88,7 @@ async function humanize(generatedText: string): Promise<{
 
 async function humbotProcessController(req: Request, res: Response) {
   try {
+    console.log("Humbot Process Controller URL", req.url);
     const { prompt: question } = req.body;
 
     const existingAnswer = await getAnswerByQuestion(question);

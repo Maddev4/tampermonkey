@@ -1,9 +1,9 @@
 // src/ui.js
-
-export function displayHumanElement(score, text, bottom) {
+export function displayHumanElement(text, score = null) {
   const stageFrame = document.getElementById("stageFrame");
   if (!stageFrame) return;
 
+  // Only create style and container if they don't exist
   if (!document.querySelector("#custom-human-style")) {
     const rect = stageFrame.getBoundingClientRect();
     let style = document.createElement("style");
@@ -12,17 +12,18 @@ export function displayHumanElement(score, text, bottom) {
       .human-container {
           position: absolute;
           left: ${rect.right + 20 + window.scrollX}px;
-          top: ${rect.bottom - 100 + window.scrollY}px;
+          top: ${rect.bottom - 120 + window.scrollY}px;
           z-index: 1000;
           display: flex;
           flex-direction: column;
-          background: rgba(24, 24, 27, 0.65);
+          background: rgba(15, 23, 42, 0.75);
           padding: 10px;
           border-radius: 12px;
           font-size: 14px;
-          box-shadow: inset 0 1px, inset 0 0 0 1px rgba(255, 255, 255, 0.025);
+          box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1), 
+                     inset 0 1px rgba(255, 255, 255, 0.1);
           width: 150px;
-          height: 100px; /* Reduced height */
+          height: 100px;
           text-align: center;
       }
       .human-title {
@@ -40,61 +41,83 @@ export function displayHumanElement(score, text, bottom) {
       }
       .human-circle {
           fill: transparent;
+          stroke: rgb(56, 189, 248);
           stroke-width: 10;
-          transition: stroke-dashoffset 1s linear, stroke 0.3s ease;
+          transition: stroke-dashoffset 1.5s ease-in-out;
       }
       .human-text {
           font-size: 40px;
           font-weight: bold;
-          transition: opacity 0.5s ease-in-out, fill 0.3s ease;
+          fill: white;
+      }
+      @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+      }
+      .loading-spinner {
+          animation: spin 1s linear infinite;
+          transform-origin: center;
       }`;
     document.head.appendChild(style);
   }
 
-  let container = document.createElement("div");
-  container.className = "human-container";
-  container.innerHTML = `
-    <div class="human-title">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-venetian-mask">
-            <path d="M2 12a5 5 0 0 0 5 5 8 8 0 0 1 5 2 8 8 0 0 1 5-2 5 5 0 0 0 5-5V7h-5a8 8 0 0 0-5 2 8 8 0 0 0-5-2H2Z"></path>
-            <path d="M6 11c1.5 0 3 .5 3 2-2 0-3 0-3-2Z"></path>
-            <path d="M18 11c-1.5 0-3 .5-3 2 2 0 3 0 3-2Z"></path>
-        </svg>
-        ${text}
-    </div>
-    <div class="human-circle-container">
-        <svg width="100" height="60" viewBox="0 0 120 120">
-            <circle class="human-circle progress" cx="60" cy="60" r="48" stroke="gray" stroke-dasharray="301.59" stroke-dashoffset="301.59" transform="rotate(-90 60 60)"></circle>
-            <text x="50%" y="50%" text-anchor="middle" dominant-baseline="middle" class="human-text" style="fill: gray;">0</text>
-        </svg>
-    </div>
-    `;
-  document.body.appendChild(container);
-
-  // Animate the human and circle progress together
-  let progressCircle = container.querySelector(".progress");
-  let scoreText = container.querySelector(".human-text");
-  let totalFrames = 60; // Approx. 1 second animation at 60fps
-  let frame = 0;
-
-  function animate() {
-    frame++;
-    let progress = Math.min(frame / totalFrames, 1);
-    let currentScore = Math.round(progress * score);
-    let offset = 301.59 - (currentScore / 100) * 301.59;
-
-    scoreText.textContent = currentScore;
-    progressCircle.style.strokeDashoffset = offset;
-
-    if (frame < totalFrames) {
-      requestAnimationFrame(animate);
-    } else {
-      progressCircle.style.stroke = "green";
-      scoreText.style.fill = "white";
-    }
+  let container = document.querySelector(".human-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "human-container";
+    container.innerHTML = `
+      <div class="human-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-venetian-mask">
+              <path d="M2 12a5 5 0 0 0 5 5 8 8 0 0 1 5 2 8 8 0 0 1 5-2 5 5 0 0 0 5-5V7h-5a8 8 0 0 0-5 2 8 8 0 0 0-5-2H2Z"></path>
+              <path d="M6 11c1.5 0 3 .5 3 2-2 0-3 0-3-2Z"></path>
+              <path d="M18 11c-1.5 0-3 .5-3 2 2 0 3 0 3-2Z"></path>
+          </svg>
+          ${text}
+      </div>
+      <div class="human-circle-container">
+          <svg width="100" height="60" viewBox="0 0 120 120" class="loading-spinner">
+              <circle cx="60" cy="60" r="48" stroke="white" stroke-width="8" fill="none" stroke-dasharray="75" stroke-linecap="round"/>
+          </svg>
+          <svg width="100" height="60" viewBox="0 0 120 120" style="display: none;" class="score-display">
+              <circle class="human-circle" cx="60" cy="60" r="48" stroke-dasharray="301.59" stroke-dashoffset="301.59" transform="rotate(-90 60 60)"/>
+              <text x="60" y="60" text-anchor="middle" dominant-baseline="middle" class="human-text">0</text>
+          </svg>
+      </div>`;
+    document.body.appendChild(container);
   }
 
-  requestAnimationFrame(animate);
+  // Add resize event listener to update position
+  const updatePosition = () => {
+    const rect = stageFrame.getBoundingClientRect();
+    container.style.left = `${rect.right + 20 + window.scrollX}px`;
+    container.style.top = `${rect.bottom - 100 + window.scrollY}px`;
+  };
+
+  // Add resize and scroll event listeners
+  window.addEventListener("resize", updatePosition);
+  window.addEventListener("scroll", updatePosition);
+
+  // Update display and animate when score is provided
+  if (score !== null) {
+    const loadingSpinner = container.querySelector(".loading-spinner");
+    const scoreDisplay = container.querySelector(".score-display");
+    const progressCircle = container.querySelector(".human-circle");
+    const scoreText = container.querySelector(".human-text");
+
+    loadingSpinner.style.display = "none";
+    scoreDisplay.style.display = "block";
+    scoreText.textContent = score;
+
+    // Animate the circle with a smooth transition
+    const circumference = 2 * Math.PI * 48; // 2πr where r=48
+    const offset = circumference - (score / 100) * circumference;
+    progressCircle.style.strokeDasharray = circumference;
+    progressCircle.style.strokeDashoffset = circumference;
+
+    // Trigger reflow to ensure transition works
+    progressCircle.getBoundingClientRect();
+    progressCircle.style.strokeDashoffset = offset;
+  }
 }
 /**
  * Creates and inserts a draggable menu into the DOM.
@@ -185,33 +208,71 @@ export function initDraggableMenu(onStartCallback) {
       top: 100px;
       left: 100px;
       width: 280px;
-      background: rgba(24, 24, 27, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.1);
       border-radius: 12px;
       font-family: system-ui, -apple-system, sans-serif;
       z-index: 999999;
       cursor: default;
       color: white;
       backdrop-filter: blur(12px);
-      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
+                 0 0 0 1px rgba(56, 189, 248, 0.1);
     }
     .menu-header {
-      background: rgba(255, 255, 255, 0.05);
+      background: rgba(30, 41, 59, 0.5);
       font-weight: 500;
       user-select: none;
       display: flex;
       align-items: center;
       gap: 10px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      border-bottom: 1px solid rgba(56, 189, 248, 0.1);
       border-radius: 12px 12px 0 0;
+      position: relative;
+      overflow: hidden;
     }
+    
+    /* Add new animation styles */
+    .menu-header::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(56, 189, 248, 0.2),
+        rgba(56, 189, 248, 0.4),
+        rgba(56, 189, 248, 0.2),
+        transparent
+      );
+      transition: 0.5s;
+      opacity: 0;
+    }
+    
+    .menu-header.active::before {
+      opacity: 1;
+      animation: borderAnimation 2s linear infinite;
+    }
+    
+    @keyframes borderAnimation {
+      0% {
+        left: -100%;
+      }
+      100% {
+        left: 100%;
+      }
+    }
+
     .menu-title {
       display: flex;
       align-items: center;
       gap: 10px;
       padding: 12px 18px;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.1);
       border-radius: 6px;
       color: white;
       font-size: 15px;
@@ -221,12 +282,12 @@ export function initDraggableMenu(onStartCallback) {
       width: 100%;
     }
     .menu-title:hover {
-      background: rgba(255, 255, 255, 0.15);
+      background: rgba(56, 189, 248, 0.1);
     }
     .menu-title.active {
-      background: rgba(59, 130, 246, 0.5);
-      border-color: rgba(59, 130, 246, 0.7);
-      color: rgb(219, 234, 254);
+      background: rgba(56, 189, 248, 0.2);
+      border-color: rgba(56, 189, 248, 0.3);
+      color: rgb(186, 230, 253);
     }
     #toggleArrow {
       cursor: pointer;
@@ -256,8 +317,8 @@ export function initDraggableMenu(onStartCallback) {
     }
     input {
       margin-bottom: 0 !important;
-      background: rgba(255, 255, 255, 0.05) !important;
-      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      background: rgba(30, 41, 59, 0.4) !important;
+      border: 1px solid rgba(56, 189, 248, 0.1) !important;
       color: white !important;
       border-radius: 4px;
       padding: 2px 6px;
@@ -359,8 +420,8 @@ export function initDraggableMenu(onStartCallback) {
       width: 100%;
       height: 100%;
       padding: 0 12px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(30, 41, 59, 0.4);
+      border: 1px solid rgba(56, 189, 248, 0.1);
       border-radius: 4px;
       color: white;
       text-align: left;
@@ -385,12 +446,12 @@ export function initDraggableMenu(onStartCallback) {
       top: 100%;
       left: 0;
       width: 100%;
-      background: rgba(24, 24, 27, 0.95);
-      border: 1px solid rgba(255, 255, 255, 0.1);
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid rgba(56, 189, 248, 0.1);
       border-radius: 4px;
       margin-top: 4px;
       z-index: 1000;
-      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     }
 
     .typing-dropdown.active .dropdown-content {
@@ -406,7 +467,7 @@ export function initDraggableMenu(onStartCallback) {
     }
 
     .dropdown-option:hover {
-      background: rgba(255, 255, 255, 0.1);
+      background: rgba(56, 189, 248, 0.1);
     }
 
     .input-group {
@@ -456,8 +517,8 @@ export function initDraggableMenu(onStartCallback) {
     /* Ensure all inputs have consistent styling */
     input[type="number"],
     .dropdown-btn {
-      background: rgba(255, 255, 255, 0.05) !important;
-      border: 1px solid rgba(255, 255, 255, 0.1) !important;
+      background: rgba(30, 41, 59, 0.4) !important;
+      border: 1px solid rgba(56, 189, 248, 0.1) !important;
       border-radius: 4px;
       color: white !important;
     }
@@ -479,9 +540,8 @@ export function initDraggableMenu(onStartCallback) {
   let isDragging = false;
 
   header.addEventListener("mousedown", (e) => {
-    // Only start drag if user didn't click the "Start" button or arrow
+    // Only start drag if user didn't click the settings icon or inputs
     if (
-      e.target.id === "startAutoWritingBtn" ||
       e.target.id === "toggleArrow" ||
       e.target.id === "submitDelay1" ||
       e.target.id === "submitDelay2" ||
@@ -514,35 +574,22 @@ export function initDraggableMenu(onStartCallback) {
 
   // Settings icon only toggles menu
   settingsIcon.addEventListener("click", (e) => {
-    e.stopPropagation(); // Prevent triggering the menu-title click
+    e.stopPropagation();
     menuBody.classList.toggle("show");
   });
 
-  // // Menu title click handler
-  // menuTitle.addEventListener("click", (e) => {
-  //   // Ignore clicks on the settings icon
-  //   if (e.target === settingsIcon || e.target.closest("#toggleArrow")) {
-  //     return;
-  //   }
+  // Add right-click handler for the menu header
+  header.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
 
-  //   // Toggle active state first
-  //   menuTitle.classList.toggle("active");
-
-  //   // Then update configuration
-  //   // updateConfig();
-  // });
-
-  console.log("Finished 4th step");
-
-  // 5. "START" BUTTON LOGIC
-  const startButton = menu.querySelector(".menu-header");
-  startButton.addEventListener("click", () => {
     const submitDelay1 = document.querySelector("#submitDelay1");
     const submitDelay2 = document.querySelector("#submitDelay2");
     const answerDelay = document.querySelector("#answerDelay");
     const answerDelayBtn = document.querySelector("#answerDelayBtn");
     const typingStyleBtn = document.querySelector("#typingStyleBtn");
 
+    // Validate configuration
     if (
       (submitDelay1.value === "0" && submitDelay2.value === "0") ||
       parseInt(submitDelay1.value) > parseInt(submitDelay2.value)
@@ -559,9 +606,11 @@ export function initDraggableMenu(onStartCallback) {
       return;
     }
 
+    // Toggle active state for both title and header
     menuTitle.classList.toggle("active");
+    header.classList.toggle("active");
 
-    // Collect all the configuration data
+    // Collect configuration data
     const config = {
       isActive: menuTitle.classList.contains("active"),
       submitDelay: {
@@ -570,18 +619,16 @@ export function initDraggableMenu(onStartCallback) {
       },
       answerDelay: parseInt(answerDelay.value) || 0,
       typingStyle: typingStyleBtn.textContent.trim(),
-      placeholder: placeholderBtn.textContent.trim(),
+      placeholder: document.querySelector("#placeholderBtn").textContent.trim(),
     };
 
-    // Pass the configuration to the callback
+    // Call the callback with the configuration
     if (typeof onStartCallback === "function") {
       onStartCallback(config);
-    } else {
-      console.warn("No start callback provided!");
     }
   });
 
-  console.log("Finished 5th step");
+  console.log("Finished 4th step");
 
   // 6. OPTIONAL: LEVEL BUTTONS
   const levelRadios = menu.querySelectorAll('input[name="level"]');
