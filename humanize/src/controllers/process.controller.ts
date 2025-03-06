@@ -18,7 +18,8 @@ async function humanize(generatedText: string): Promise<{
 }> {
   console.log("Calling Humbot API with text...");
   // Create Humanization Task
-  const humbotCreateResponse = await axios.post(
+  console.log("Generated Text", generatedText);
+  const { data } = await axios.post(
     "https://humbot.ai/api/humbot/v1/create",
     {
       input: generatedText,
@@ -32,7 +33,7 @@ async function humanize(generatedText: string): Promise<{
     }
   );
 
-  const taskId = humbotCreateResponse?.data?.data?.task_id;
+  const taskId = data?.data?.task_id;
   console.log("Task Id", taskId);
 
   // Poll Humbot API for task completion
@@ -112,19 +113,19 @@ async function humbotProcessController(req: Request, res: Response) {
 
     // Groq Part: Generate text if a prompt is provided
     if (question) {
-      console.log("Calling Groq API with prompt...\n");
+      console.log("Calling Groq API with prompt...\n", question);
       try {
         const chatCompletion = await groq.chat.completions.create({
           messages: [
             {
               role: "user",
-              content: `${question}\n Generate answer based on above prompt as real american university student wrote and as humanized. And make it simple, cool, professional, human like answer as much as possible.`,
+              content: `${question}\n $ Generate answer based on above prompt as real american university student wrote and as humanized. And make it simple, cool, professional, human like answer as much as possible.`,
             },
           ],
           model: "llama-3.3-70b-versatile", // Verify if this model exists
         });
 
-        // console.log(chatCompletion);
+        console.log("Chat Completion", chatCompletion);
         generatedText =
           chatCompletion.choices[0]?.message?.content || "No content generated";
         // console.log("Generated Text from Groq:", generatedText);

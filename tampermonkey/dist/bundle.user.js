@@ -1,14 +1,15 @@
 // ==UserScript==
 // @name         Automatic Writing
 // @namespace    Revolt
-// @version      1.0
-// @description  Automatic writing assistant
+// @version      1.1
+// @description  Automatic writing assistant for Edgenuity
 // @author       Revolt
-// @match        https://r22.core.learn.edgenuity.com/player/
+// @match        https://*.core.learn.edgenuity.com/player/
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @connect      localhost
+// @grant        GM_addStyle
+// @connect      *
 // ==/UserScript==
 /******/ (() => { // webpackBootstrap
 /******/ 	"use strict";
@@ -128,6 +129,7 @@ async function saveDB(question, answer, score) {
 __webpack_require__.r(__webpack_exports__);
 /* harmony export */ __webpack_require__.d(__webpack_exports__, {
 /* harmony export */   displayHumanElement: () => (/* binding */ displayHumanElement),
+/* harmony export */   displayLessonNumber: () => (/* binding */ displayLessonNumber),
 /* harmony export */   initDraggableMenu: () => (/* binding */ initDraggableMenu)
 /* harmony export */ });
 // src/ui.js
@@ -267,67 +269,90 @@ function initDraggableMenu(onStartCallback) {
   menu.id = "autoWritingMenu";
   menu.innerHTML = `
     <div class="menu-header">
-      <button class="menu-title">
-        <svg id="toggleArrow" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-settings">
-          <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
-          <circle cx="12" cy="12" r="3"/>
-        </svg>
-        Auto Writing
-      </button>
+      <div class="menu-title">REVOLT | BETA</div>
     </div>
-    <div class="menu-body" style="display: none;">
-      <div class="menu-row">
-        <label>Submit delay:</label>
-        <div class="input-group">
-          <div class="input-with-unit">
-            <input type="number" min="0" step="1" value="0" id="submitDelay1">
-            <span class="input-unit">sec</span>
+    <div class="menu-items">
+      <div class="menu-item" id="autoWritingItem">
+        <button class="menu-item-button">
+          <div class="button-content">
+            <div class="settings-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+              </svg>
+            </div>
+            <span class="button-text">Auto writing</span>
           </div>
-          <span>-</span>
-          <div class="input-with-unit">
-            <input type="number" min="0" step="1" value="0" id="submitDelay2">
-            <span class="input-unit">sec</span>
+        </button>
+        <div class="menu-item-content" style="display: none;">
+          <div class="menu-body">
+            <div class="menu-row">
+              <label>Submit delay:</label>
+              <div class="input-group">
+                <div class="input-with-unit">
+                  <input type="number" min="0" step="1" value="0" id="submitDelay1">
+                  <span class="input-unit">sec</span>
+                </div>
+                <span>-</span>
+                <div class="input-with-unit">
+                  <input type="number" min="0" step="1" value="0" id="submitDelay2">
+                  <span class="input-unit">sec</span>
+                </div>
+              </div>
+            </div>
+            <div class="menu-row">
+              <label>Answer delay:</label>
+              <div class="typing-dropdown answer-delay-dropdown">
+                <button class="dropdown-btn" id="answerDelayBtn">None</button>
+                <div class="dropdown-content">
+                  <div class="dropdown-option" data-value="none">None</div>
+                  <div class="dropdown-option" data-value="custom">Custom</div>
+                </div>
+              </div>
+              <div class="input-with-unit custom-delay-input" style="display: none; width: 80px;">
+                <input type="number" min="0" step="1" value="0" id="answerDelay">
+                <span class="input-unit">wpm</span>
+              </div>
+            </div>
+            <div class="menu-row">
+              <label>Typing Style:</label>
+              <div class="typing-dropdown">
+                <button class="dropdown-btn" id="typingStyleBtn">None</button>
+                <div class="dropdown-content">
+                  <div class="dropdown-option" data-value="default">None</div>
+                  <div class="dropdown-option" data-value="level1">Level 1</div>
+                  <div class="dropdown-option" data-value="level2">Level 2</div>
+                  <div class="dropdown-option" data-value="level3">Level 3</div>
+                </div>
+              </div>
+            </div>
+            <div class="menu-row">
+              <label>Placeholder:</label>
+              <div class="typing-dropdown">
+                <button class="dropdown-btn" id="placeholderBtn">None</button>
+                <div class="dropdown-content">
+                  <div class="dropdown-option" data-value="default">None</div>
+                  <div class="dropdown-option" data-value="enabled">Enabled</div>
+                  <div class="dropdown-option" data-value="disabled">Disabled</div>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
-      <div class="menu-row" style="gap: 2px !important;">
-        <label>Answer delay:</label>
-        <div class="typing-dropdown answer-delay-dropdown" style="margin-left: 10px;">
-          <button class="dropdown-btn" id="answerDelayBtn">None</button>
-          <div class="dropdown-content">
-            <div class="dropdown-option" data-value="none">None</div>
-            <div class="dropdown-option" data-value="custom">Custom</div>
+      <div class="menu-item" id="examUnlockerItem">
+        <button class="menu-item-button">
+          <div class="button-content">
+            <div class="unlock-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+              </svg>
+            </div>
+            <span class="button-text">Exam unlocker</span>
           </div>
-        </div>
-        <div class="input-with-unit custom-delay-input" style="display: none; width: 100px;">
-          <input type="number" min="0" step="1" value="0" id="answerDelay">
-          <span class="input-unit">wpm</span>
-        </div>
+        </button>
       </div>
-      <div class="menu-row">
-        <label>Typing Style:</label>
-        <div class="typing-dropdown">
-          <button class="dropdown-btn" id="typingStyleBtn">None</button>
-          <div class="dropdown-content">
-            <div class="dropdown-option" data-value="default">None</div>
-            <div class="dropdown-option" data-value="level1">Level 1</div>
-            <div class="dropdown-option" data-value="level2">Level 2</div>
-            <div class="dropdown-option" data-value="level3">Level 3</div>
-          </div>
-        </div>
-      </div>
-      <div class="menu-row">
-        <label>Placeholder:</label>
-        <div class="typing-dropdown">
-          <button class="dropdown-btn" id="placeholderBtn">None</button>
-          <div class="dropdown-content">
-            <div class="dropdown-option" data-value="default">None</div>
-            <div class="dropdown-option" data-value="enabled">Enabled</div>
-            <div class="dropdown-option" data-value="disabled">Disabled</div>
-          </div>
-        </div>
-      </div>
-      
     </div>
   `;
   document.body.appendChild(menu);
@@ -339,320 +364,186 @@ function initDraggableMenu(onStartCallback) {
       position: fixed;
       top: 100px;
       left: 100px;
-      width: 280px;
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.1);
+      width: 320px;
+      background: #141517;
       border-radius: 12px;
-      font-family: system-ui, -apple-system, sans-serif;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
       z-index: 999999;
       cursor: default;
       color: white;
-      backdrop-filter: blur(12px);
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2),
-                 0 0 0 1px rgba(56, 189, 248, 0.1);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
     }
+
     .menu-header {
-      background: rgba(30, 41, 59, 0.5);
-      font-weight: 500;
+      background: #222324;
+      padding: 15px 20px;
       user-select: none;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.1);
       border-radius: 12px 12px 0 0;
-      position: relative;
-      overflow: hidden;
-    }
-    
-    /* Add new animation styles */
-    .menu-header::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(56, 189, 248, 0.2),
-        rgba(56, 189, 248, 0.4),
-        rgba(56, 189, 248, 0.2),
-        transparent
-      );
-      transition: 0.5s;
-      opacity: 0;
-    }
-    
-    .menu-header.active::before {
-      opacity: 1;
-      animation: borderAnimation 2s linear infinite;
-    }
-    
-    @keyframes borderAnimation {
-      0% {
-        left: -100%;
-      }
-      100% {
-        left: 100%;
-      }
     }
 
     .menu-title {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 18px;
-      background: rgba(30, 41, 59, 0.4);
-      border: 1px solid rgba(56, 189, 248, 0.1);
-      border-radius: 6px;
       color: white;
       font-size: 15px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.2s;
+      font-weight: 600;
+    }
+
+    .menu-items {
+      padding: 10px;
+    }
+
+    .menu-item {
+      margin-bottom: 8px;
+    }
+
+    .menu-item-button {
       width: 100%;
-    }
-    .menu-title:hover {
-      background: rgba(56, 189, 248, 0.1);
-    }
-    .menu-title.active {
-      background: rgba(56, 189, 248, 0.2);
-      border-color: rgba(56, 189, 248, 0.3);
-      color: rgb(186, 230, 253);
-    }
-    #toggleArrow {
-      cursor: pointer;
-      transition: all 0.2s;
-    }
-    #toggleArrow:hover {
-      opacity: 0.8;
-    }
-    #startAutoWritingBtn {
-      margin-left: auto;
-      cursor: pointer;
-      background: rgba(255, 255, 255, 0.1);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: white;
-      padding: 4px 12px;
+      padding: 10px 15px;
+      background: #242526;
+      border: none;
       border-radius: 6px;
-      font-size: 13px;
-      transition: all 0.2s;
+      color: white;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      transition: background 0.2s;
     }
-    #startAutoWritingBtn:hover {
-      background: rgba(255, 255, 255, 0.15);
+
+    .menu-item-button:hover {
+      background: #2a2b2c;
     }
-    #startAutoWritingBtn.active {
-      background: rgba(59, 130, 246, 0.5);
-      border-color: rgba(59, 130, 246, 0.7);
-      color: rgb(219, 234, 254);
-    }
-    input {
-      margin-bottom: 0 !important;
-      background: rgba(30, 41, 59, 0.4) !important;
-      border: 1px solid rgba(56, 189, 248, 0.1) !important;
-      color: white !important;
-      border-radius: 4px;
-      padding: 2px 6px;
-    }
-    input[type="number"] {
-      width: 50px !important;
-    }
+
     .menu-body {
-      display: none;
-      padding: 16px;
-      flex-direction: column;
-      gap: 12px;
+      padding: 15px;
+      background: #1a1b1c;
+      border-radius: 6px;
+      margin-top: 8px;
     }
-    .menu-body.show {
-      display: flex !important;
-    }
+
     .menu-row {
       display: flex;
       align-items: center;
       gap: 8px;
-      font-size: 13px;
-      height: 32px;  /* Fixed height for all rows */
+      margin-bottom: 12px;
+      height: 32px;
     }
+
     .menu-row label {
-      width: 100px;  /* Fixed width for labels */
-      margin-right: 4px;
+      min-width: 100px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
       opacity: 0.9;
-    }
-    .menu-levels {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-    }
-    .level-options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      margin-left: 8px;
-      width: 100%;
-    }
-    .level-options > div {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      padding: 6px 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 6px;
-      transition: background 0.2s;
-      cursor: pointer;
-    }
-    .level-options > div:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    .menu-levels input[type="radio"] {
-      margin: 0;
-      cursor: pointer;
-    }
-    .menu-levels label {
-      margin: 0;
-      cursor: pointer;
-      font-size: 13px;
-    }
-    .typing-options {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    
-    .typing-option {
-      width: 100%;
-      padding: 6px 10px;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 6px;
-      color: white;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 13px;
-    }
-    
-    .typing-option:hover {
-      background: rgba(255, 255, 255, 0.1);
-    }
-    
-    .typing-option.active {
-      background: rgba(255, 255, 255, 0.15);
-      border-color: rgba(255, 255, 255, 0.2);
-    }
-    
-    .typing-dropdown {
-      position: relative;
-      width: 150px;
-      height: 28px;
-    }
-    
-    .dropdown-btn {
-      width: 100%;
-      height: 100%;
-      padding: 0 12px;
-      background: rgba(30, 41, 59, 0.4);
-      border: 1px solid rgba(56, 189, 248, 0.1);
-      border-radius: 4px;
-      color: white;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.2s;
-      font-size: 13px;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      box-sizing: border-box;
-    }
-
-    .dropdown-btn::after {
-      content: '▼';
-      font-size: 10px;
-      margin-left: 8px;
-    }
-
-    .dropdown-content {
-      display: none;
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: 100%;
-      background: rgba(15, 23, 42, 0.95);
-      border: 1px solid rgba(56, 189, 248, 0.1);
-      border-radius: 4px;
-      margin-top: 4px;
-      z-index: 1000;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
-    }
-
-    .typing-dropdown.active .dropdown-content {
-      display: block;
-    }
-
-    .dropdown-option {
-      padding: 8px 12px;
-      cursor: pointer;
-      transition: all 0.2s;
-      color: white;
-      font-size: 13px;
-    }
-
-    .dropdown-option:hover {
-      background: rgba(56, 189, 248, 0.1);
     }
 
     .input-group {
       display: flex;
       align-items: center;
       gap: 8px;
-      height: 28px;  /* Match other elements */
     }
 
     .input-with-unit {
       position: relative;
-      width: 60px;
-      height: 28px;  /* Fixed height for input containers */
+      width: 65px;
     }
 
-    /* Remove spinner buttons for Chrome, Safari, Edge, Opera */
-    input::-webkit-outer-spin-button,
-    input::-webkit-inner-spin-button {
+    input[type="number"] {
+      width: 100%;
+      height: 28px;
+      padding: 0 25px 0 8px;
+      background: #242526;
+      border: none;
+      border-radius: 4px;
+      color: white;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      -moz-appearance: textfield;
+    }
+
+    input[type="number"]::-webkit-outer-spin-button,
+    input[type="number"]::-webkit-inner-spin-button {
       -webkit-appearance: none;
       margin: 0;
     }
 
-    /* Remove spinner buttons for Firefox */
-    input[type="number"] {
-      -moz-appearance: textfield;
-    }
-
-    .input-with-unit input {
-      width: 100% !important;
-      height: 100% !important;  /* Make input fill container */
-      padding-right: 28px !important;
-      padding-left: 8px !important;
-      text-align: left;
-      box-sizing: border-box;
-    }
-
     .input-unit {
       position: absolute;
-      right: 6px;
+      right: 8px;
       top: 50%;
       transform: translateY(-50%);
-      font-size: 12px;
-      color: rgba(255, 255, 255, 0.5);
+      color: rgba(255, 255, 255, 0.6);
+      font-size: 10px;
       pointer-events: none;
     }
 
-    /* Ensure all inputs have consistent styling */
-    input[type="number"],
+    .typing-dropdown {
+      position: relative;
+      width: 150px;
+    }
+
     .dropdown-btn {
-      background: rgba(30, 41, 59, 0.4) !important;
-      border: 1px solid rgba(56, 189, 248, 0.1) !important;
+      width: 100%;
+      height: 28px;
+      padding: 0 10px;
+      background: #242526;
+      border: none;
       border-radius: 4px;
-      color: white !important;
+      color: white;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+      font-size: 15px;
+      font-weight: 600;
+      text-align: left;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .dropdown-btn::after {
+      content: '▼';
+      font-size: 10px;
+      opacity: 0.7;
+    }
+
+    .dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      background: #242526;
+      border-radius: 4px;
+      margin-top: 4px;
+      display: none;
+      z-index: 1;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                  0 0 0 1px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      overflow: hidden;
+    }
+
+    .dropdown-option {
+      padding: 8px 10px;
+      color: white;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    .dropdown-option:last-child {
+      border-bottom: none;
+    }
+
+    .dropdown-option:hover {
+      background: #2a2b2c;
+      padding-left: 15px;
+    }
+
+    .typing-dropdown.active .dropdown-content {
+      display: block;
     }
 
     .answer-delay-dropdown {
@@ -662,58 +553,57 @@ function initDraggableMenu(onStartCallback) {
     .custom-delay-input {
       transition: all 0.3s ease;
     }
+
+    .button-content {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      width: 100%;
+    }
+
+    .settings-icon,
+    .unlock-icon {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 24px;
+      height: 24px;
+      border-radius: 4px;
+      transition: all 0.2s ease;
+      color: rgba(255, 255, 255, 0.7);
+    }
+
+    .settings-icon:hover,
+    .unlock-icon:hover {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+    }
+
+    .button-text {
+      flex: 1;
+    }
   `;
   document.head.appendChild(style);
 
-  // 3. DRAGGABLE LOGIC
-  const header = menu.querySelector(".menu-header");
-  let offsetX = 0,
-    offsetY = 0;
-  let isDragging = false;
+  // 3. ADD EVENT LISTENERS
+  const autoWritingItem = document.getElementById("autoWritingItem");
+  const autoWritingButton = autoWritingItem.querySelector(".menu-item-button");
+  const settingsIcon = autoWritingItem.querySelector(".settings-icon");
+  const autoWritingContent =
+    autoWritingItem.querySelector(".menu-item-content");
 
-  header.addEventListener("mousedown", (e) => {
-    // Only start drag if user didn't click the settings icon or inputs
-    if (
-      e.target.id === "toggleArrow" ||
-      e.target.id === "submitDelay1" ||
-      e.target.id === "submitDelay2" ||
-      e.target.id === "answerDelay"
-    ) {
-      return;
+  // Toggle menu content
+  settingsIcon.addEventListener("click", () => {
+    const isExpanded = autoWritingContent.style.display !== "none";
+    autoWritingContent.style.display = isExpanded ? "none" : "block";
+    autoWritingButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
+  });
+
+  // Button click handler (excluding settings icon) - start auto writing
+  autoWritingButton.addEventListener("click", (e) => {
+    if (e.target.closest(".settings-icon")) {
+      return; // Ignore if clicking on settings icon
     }
-    isDragging = true;
-    offsetX = e.clientX - menu.offsetLeft;
-    offsetY = e.clientY - menu.offsetTop;
-  });
-
-  document.addEventListener("mouseup", () => {
-    isDragging = false;
-  });
-
-  document.addEventListener("mousemove", (e) => {
-    if (!isDragging) return;
-    e.preventDefault(); // Prevent selecting text while dragging
-    menu.style.left = e.clientX - offsetX + "px";
-    menu.style.top = e.clientY - offsetY + "px";
-  });
-
-  // 4. TOGGLE ARROW LOGIC
-  const menuTitle = menu.querySelector(".menu-title");
-  const menuBody = menu.querySelector(".menu-body");
-
-  // Separate handlers for settings icon and Auto Writing button
-  const settingsIcon = menu.querySelector("#toggleArrow");
-
-  // Settings icon only toggles menu
-  settingsIcon.addEventListener("click", (e) => {
-    e.stopPropagation();
-    menuBody.classList.toggle("show");
-  });
-
-  // Add right-click handler for the menu header
-  header.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    e.stopPropagation();
 
     const submitDelay1 = document.querySelector("#submitDelay1");
     const submitDelay2 = document.querySelector("#submitDelay2");
@@ -738,13 +628,12 @@ function initDraggableMenu(onStartCallback) {
       return;
     }
 
-    // Toggle active state for both title and header
-    menuTitle.classList.toggle("active");
-    header.classList.toggle("active");
+    // Toggle active state
+    autoWritingButton.classList.toggle("active");
 
     // Collect configuration data
     const config = {
-      isActive: menuTitle.classList.contains("active"),
+      isActive: autoWritingButton.classList.contains("active"),
       submitDelay: {
         min: parseInt(submitDelay1.value) || 0,
         max: parseInt(submitDelay2.value) || 0,
@@ -760,33 +649,16 @@ function initDraggableMenu(onStartCallback) {
     }
   });
 
-  console.log("Finished 4th step");
-
-  // 6. OPTIONAL: LEVEL BUTTONS
-  const levelRadios = menu.querySelectorAll('input[name="level"]');
-  levelRadios.forEach((radio) => {
-    radio.addEventListener("change", () => {
-      if (radio.checked) {
-        const level = radio.value;
-        // Insert custom logic for level selection here
-      }
-    });
-  });
-
-  // Add dropdown functionality for both dropdowns
+  // Add dropdown functionality
   const dropdowns = menu.querySelectorAll(".typing-dropdown");
-
   dropdowns.forEach((dropdown) => {
     const btn = dropdown.querySelector(".dropdown-btn");
     const options = dropdown.querySelectorAll(".dropdown-option");
 
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
-      // Close all other dropdowns first
       dropdowns.forEach((d) => {
-        if (d !== dropdown) {
-          d.classList.remove("active");
-        }
+        if (d !== dropdown) d.classList.remove("active");
       });
       dropdown.classList.toggle("active");
     });
@@ -798,7 +670,6 @@ function initDraggableMenu(onStartCallback) {
         btn.textContent = option.textContent;
         dropdown.classList.remove("active");
 
-        // Handle custom input for answer delay dropdown
         if (dropdown.classList.contains("answer-delay-dropdown")) {
           const customDelayInput = menu.querySelector(".custom-delay-input");
           if (selectedValue === "custom") {
@@ -808,83 +679,197 @@ function initDraggableMenu(onStartCallback) {
             document.querySelector("#answerDelay").value = "0";
           }
         }
-
-        updateConfig();
       });
     });
   });
 
   // Close dropdowns when clicking outside
   document.addEventListener("click", () => {
-    dropdowns.forEach((dropdown) => {
-      dropdown.classList.remove("active");
-    });
+    dropdowns.forEach((dropdown) => dropdown.classList.remove("active"));
   });
 
-  // Function to update configuration
-  function updateConfig() {
-    const config = {
-      isActive: menuTitle.classList.contains("active"),
-      submitDelay: {
-        min: parseInt(document.querySelector("#submitDelay1").value) || 0,
-        max: parseInt(document.querySelector("#submitDelay2").value) || 0,
-      },
-      answerDelay:
-        document.querySelector("#answerDelayBtn").textContent === "Custom"
-          ? parseInt(document.querySelector("#answerDelay").value) || 0
-          : 0,
-      typingStyle: document.querySelector("#typingStyleBtn").textContent.trim(),
-      placeholder: document.querySelector("#placeholderBtn").textContent.trim(),
-    };
+  // Make menu draggable
+  const header = menu.querySelector(".menu-header");
+  let isDragging = false;
+  let currentX;
+  let currentY;
+  let initialX;
+  let initialY;
+  let xOffset = 0;
+  let yOffset = 0;
 
-    // Validate configuration
-    if (config.submitDelay.min > config.submitDelay.max) {
-      alert("Minimum submit delay cannot be greater than maximum submit delay");
-      return false;
-    }
+  header.addEventListener("mousedown", (e) => {
+    initialX = e.clientX - xOffset;
+    initialY = e.clientY - yOffset;
+    isDragging = true;
+  });
 
-    if (config.answerDelay < 0) {
-      alert("Answer delay cannot be negative");
-      return false;
+  document.addEventListener("mousemove", (e) => {
+    if (isDragging) {
+      e.preventDefault();
+      currentX = e.clientX - initialX;
+      currentY = e.clientY - initialY;
+      xOffset = currentX;
+      yOffset = currentY;
+      menu.style.transform = `translate(${currentX}px, ${currentY}px)`;
     }
+  });
 
-    // Call the callback with the updated config
-    if (typeof onStartCallback === "function") {
-      onStartCallback(config);
+  document.addEventListener("mouseup", () => {
+    isDragging = false;
+  });
+
+  // Add event listener for exam unlocker
+  const examUnlockerItem = document.getElementById("examUnlockerItem");
+  const examUnlockerButton =
+    examUnlockerItem.querySelector(".menu-item-button");
+  const unlockIcon = examUnlockerItem.querySelector(".unlock-icon");
+
+  unlockIcon.addEventListener("click", (e) => {
+    e.stopPropagation();
+    // Add your unlock icon click handler here
+  });
+
+  examUnlockerButton.addEventListener("click", (e) => {
+    if (e.target.closest(".unlock-icon")) {
+      return; // Ignore if clicking on unlock icon
     }
-    return true;
+    // Add your exam unlocker button click handler here
+  });
+}
+
+// Add this new function
+function displayLessonNumber(number) {
+  const lessonTitle = document.getElementById("lessonInfo");
+  if (!lessonTitle) return;
+
+  // Get the width of the lesson title
+  const titleWidth = lessonTitle.offsetWidth;
+  console.log("Title Width", titleWidth);
+
+  // Add styles if they don't exist
+  if (!document.getElementById("lesson-number-style")) {
+    const style = document.createElement("style");
+    style.id = "lesson-number-style";
+    style.textContent = `
+      .lesson-number-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        z-index: 999999;
+        animation: fadeIn 0.3s ease-out;
+        height: 120px;
+        width: ${titleWidth}px;
+        margin: 0 auto;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+      }
+
+      .lesson-number {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 100%;
+        font-size: 15px;
+        font-weight: 600;
+        padding: 8px 12px;
+        background: #141517;
+        border: 1px solid rgba(0, 108, 255, 0.1);
+        border-radius: 12px;
+        color: white;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.2);
+        box-sizing: border-box;
+        height: 80px;
+        position: relative;
+      }
+
+      @keyframes fadeIn {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .lesson-number::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        height: 10px;
+        width: 90%;
+        background: #242526;
+        border-radius: 5px;
+      }
+
+      .lesson-number::after {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 5%;
+        transform: translateY(-50%);
+        height: 10px;
+        width: 0%;
+        background: #006cff;
+        animation: fillBar 1s ease-out forwards;
+        border-radius: 5px;
+        box-shadow: 0 0 10px rgba(0, 108, 255, 0.3);
+      }
+
+      @keyframes fillBar {
+        from {
+          width: 0%;
+        }
+        to {
+          width: calc(90% * var(--progress) / 100);
+        }
+      }
+    `;
+    document.head.appendChild(style);
   }
 
-  // Update dropdown option click handlers
-  dropdowns.forEach((dropdown) => {
-    const options = dropdown.querySelectorAll(".dropdown-option");
-    options.forEach((option) => {
-      option.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const btn = dropdown.querySelector(".dropdown-btn");
-        const selectedValue = option.getAttribute("data-value");
-        btn.textContent = option.textContent;
-        dropdown.classList.remove("active");
+  // Create or update the number element
+  let container = document.querySelector(".lesson-number-container");
+  if (!container) {
+    container = document.createElement("div");
+    container.className = "lesson-number-container";
+    container.style.width = `${titleWidth}px`; // Set width dynamically
 
-        // Handle custom input for answer delay dropdown
-        if (btn.id === "answerDelayBtn") {
-          const customDelayInput = menu.querySelector(".custom-delay-input");
-          if (selectedValue === "custom") {
-            customDelayInput.style.display = "block";
-          } else {
-            customDelayInput.style.display = "none";
-            document.querySelector("#answerDelay").value = "0";
-          }
-        }
+    const numberElement = document.createElement("span");
+    numberElement.className = "lesson-number";
+    container.appendChild(numberElement);
 
-        // Update configuration after changing dropdown value
-        updateConfig();
-      });
+    document.body.appendChild(container);
+  } else {
+    // Update container width if lesson title width changes
+    container.style.width = `${titleWidth}px`;
+  }
+
+  // Create ResizeObserver to watch lessonInfo element width changes
+  const lessonInfo = document.getElementById("lessonInfo");
+  if (lessonInfo) {
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const lessonInfoWidth = entry.contentRect.width;
+        container.style.width = `${lessonInfoWidth}px`;
+      }
     });
-  });
+    resizeObserver.observe(lessonInfo);
+  }
 
-  // Initialize configuration with default values
-  updateConfig();
+  // Update the number with animation
+  const numberElement = container.querySelector(".lesson-number");
+  numberElement.style.animation = "none";
+  numberElement.offsetHeight; // Trigger reflow
+  numberElement.style.animation = "fadeIn 0.3s ease-out";
+  numberElement.textContent = ""; // Remove the percentage text
+  // Set the progress percentage as a CSS variable
+  numberElement.style.setProperty("--progress", `${number}`);
 }
 
 
@@ -1212,7 +1197,386 @@ __webpack_require__.r(__webpack_exports__);
   }
 
   async function activateAutomaticWriting() {
+    let matchingEnrollment;
     console.log("Get started!!!~~~~~~~~~~~!!!");
+
+    const lms_base_url = initialization?.InitialLaunchData?.LMSAPIBasePath;
+    const prefix = lms_base_url.split("//")[1].split(".")[0];
+    console.log("lms_base_url:", prefix);
+
+    const session_user_id = initialization?.InitialLaunchData?.UserID;
+    console.log("Session User ID:", session_user_id);
+
+    const cookie_user_id = initialization?.pk;
+    console.log("Cookie User ID:", cookie_user_id);
+
+    // Get course name from the span element
+    const courseName = initialization?.InitialLaunchData?.CourseName;
+    console.log("Course name:", courseName);
+
+    (0,_ui_js__WEBPACK_IMPORTED_MODULE_1__.displayLessonNumber)(initialization?.InitialActivityData?.Progress);
+
+    // Get next activity data
+    // Add click event listener to Next Activity button
+    const nextActivityButton = document.querySelector("a.footnav.goRight");
+    if (nextActivityButton) {
+      nextActivityButton.addEventListener("click", async () => {
+        console.log("Next Activity Button clicked!!!!");
+        try {
+          console.log("Fetching next activity data...");
+
+          const activityId = initialization?.InitialActivityData?.ActivityOrder;
+          console.log("Activity ID:", activityId);
+          const ContextID = initialization?.InitialLaunchData?.ContextID;
+          console.log("Context ID:", ContextID);
+
+          const nextActivityResponse = await fetch(
+            `https://${prefix}.core.learn.edgenuity.com/lmsapi/req/navigation/getnextactivity?UserID=${session_user_id}&StudentBuildID=${ContextID}&ActivityOrder=${activityId}&IsSSLimited=False&AllowPretestsAndQuizzes=False`,
+            {
+              method: "GET",
+              credentials: "include",
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+
+          if (!nextActivityResponse.ok) {
+            throw new Error(
+              `HTTP error! status: ${nextActivityResponse.status}`
+            );
+          }
+
+          const nextActivityData = await nextActivityResponse.json();
+          const { IsRestrictedActivity } = nextActivityData?.Navigation;
+          console.log("Is Restricted:", IsRestrictedActivity);
+
+          if (IsRestrictedActivity) {
+            // Add brilliant shadow border if activity is restricted
+            let waitForContainer;
+            const intervalFunc = () => {
+              const stageFrame = getStageFrame();
+              const overlayContainers =
+                stageFrame?.contentWindow.document.querySelectorAll(
+                  ".overlay-attempt"
+                );
+              const overlayContainer = Array.from(overlayContainers).find(
+                (container) =>
+                  container.querySelector(
+                    ".overlay-attempt-button.overlay-attempt-button-lock"
+                  )
+              );
+              if (overlayContainer) {
+                overlayContainer.style.cursor = "pointer";
+                overlayContainer.style.border =
+                  "2px solid rgba(255, 215, 0, 0.7)";
+                overlayContainer.style.transition = "all 0.3s ease";
+
+                overlayContainer.addEventListener("mouseenter", () => {
+                  overlayContainer.style.boxShadow =
+                    "0 0 20px 10px rgba(255, 215, 0, 0.7)";
+                });
+
+                overlayContainer.addEventListener("mouseleave", () => {
+                  overlayContainer.style.boxShadow = "none";
+                });
+
+                overlayContainer.addEventListener("click", () => {
+                  overlayContainer.style.transform = "scale(0.95)";
+                  overlayContainer.style.boxShadow =
+                    "0 0 30px 15px rgba(255, 215, 0, 0.9)";
+                  setTimeout(() => {
+                    overlayContainer.style.transform = "scale(1)";
+                    overlayContainer.style.boxShadow = "none";
+                  }, 200);
+                });
+                overlayContainer.onclick = async () => {
+                  console.log(
+                    "Initial Activity Order:",
+                    initialization?.InitialActivityData?.ActivityOrder
+                  );
+
+                  // window.parent.Namespace.global().playerView.startActivity(
+                  //   initialization?.InitialActivityData?.ActivityOrder,
+                  //   function (warning) {
+                  //     if (warning == "NOATTEMPT")
+                  //       window.parent.Namespace.global()
+                  //         .playerView.stageView()
+                  //         .loadUrl(
+                  //           window.parent.Namespace.global().services.overlay
+                  //             .basepath +
+                  //             "?errormessage=" +
+                  //             encodeURIComponent(
+                  //               "You do not have any retakes available for this Assessment."
+                  //             )
+                  //         );
+                  //   }
+                  // );
+
+                  const loadQuestion = (id, parsedAnswers, ActivityKeys) => {
+                    let learningObjectKey = ActivityKeys.learningObjectKey;
+                    let resultKey = ActivityKeys.resultKey;
+                    let enrollmentKey = ActivityKeys.enrollmentKey;
+                    let sessionKey = ActivityKeys.sessionKey;
+
+                    return fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/ContentViewers/AssessmentViewer/LoadQuestion`,
+                      {
+                        headers: {
+                          "content-type":
+                            "application/x-www-form-urlencoded; charset=UTF-8",
+                        },
+                        body: `learningObjectKey=${learningObjectKey}&resultKey=${resultKey}&enrollmentKey=${enrollmentKey}&questionKey=${id}&sessionKey=${sessionKey}`,
+                        method: "POST",
+                      }
+                    )
+                      .then((res) => res.json())
+                      .then((res) => {
+                        const html = parser.parseFromString(
+                          res.html,
+                          "text/html"
+                        );
+
+                        let inputSelector =
+                          ".Practice_Question_Body .answer-choice input";
+                        let selectSelector =
+                          ".Practice_Question_Body select option";
+                        let inputTextSelector = "input[type='text']";
+
+                        let inputs = Array.from(
+                          html.querySelectorAll(inputSelector)
+                        ).map((li) => [li.name, li.value]);
+                        let selects = Array.from(
+                          html.querySelectorAll(selectSelector)
+                        )
+                          .map((option) => {
+                            if (option.hasAttribute("value")) {
+                              return [option.parentElement.name, option.value];
+                            }
+                          })
+                          .filter(Boolean);
+                        let inputTexts = Array.from(
+                          html.querySelectorAll(inputTextSelector)
+                        ).map((input) => [input.name, "FILL_WITH_TEXT"]);
+                        // console.log("YO BITH", inputs, selects, inputTexts);
+
+                        let answers = inputs.concat(selects).concat(inputTexts);
+                        let correctAnswers = parsedAnswers.filter((x) =>
+                          x.question_id.includes(id)
+                        );
+
+                        return changeQuestionAnswer(
+                          answers,
+                          id,
+                          correctAnswers,
+                          ActivityKeys
+                        );
+                      });
+                  };
+
+                  const changeQuestionAnswer = (
+                    answers,
+                    id,
+                    correctAnswers,
+                    ActivityKeys
+                  ) => {
+                    // console.log(answers, id, correctAnswers);
+
+                    let answerToChange = [];
+                    answers.find((answer) => {
+                      correctAnswers.forEach((correctAnswer) => {
+                        if (correctAnswer.question_id.includes(answer[1])) {
+                          answerToChange.push([answer[0], answer[1]]);
+                        } else if (
+                          answer[1] == "on" &&
+                          correctAnswer.question_id == answer[0]
+                        ) {
+                          answerToChange.push([answer[0], answer[1]]);
+                        } else if (answer[1] == "FILL_WITH_TEXT") {
+                          answerToChange.push([
+                            answer[0],
+                            correctAnswer.optional_data
+                              .trim()
+                              .replace(/"/g, ""),
+                          ]);
+                        }
+                      });
+                    });
+
+                    return fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/ContentViewers/AssessmentViewer/ChangeQuestionAnswer`,
+                      {
+                        headers: {
+                          "content-type":
+                            "application/x-www-form-urlencoded; charset=UTF-8",
+                        },
+                        body: `learningObjectKey=${
+                          ActivityKeys.learningObjectKey
+                        }&resultKey=${ActivityKeys.resultKey}&enrollmentKey=${
+                          ActivityKeys.enrollmentKey
+                        }&sessionKey=${
+                          ActivityKeys.sessionKey
+                        }&language=0&questionKey=${id}${answerToChange
+                          .map((answer) => `&${answer[0]}=${answer[1]}`)
+                          .join("")}`,
+                        method: "POST",
+                      }
+                    )
+                      .then((res) => res.json())
+                      .then((res) => {
+                        // console.log(res);
+                      });
+                  };
+
+                  try {
+                    const ltiLaunchResponse = await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/Player/LTILaunch`,
+                      {
+                        headers: {
+                          "content-type": "application/x-www-form-urlencoded",
+                        },
+                        body: Object.keys(initialization.InitialLaunchData)
+                          .map(
+                            (key) =>
+                              `${key}=${encodeURIComponent(
+                                initialization.InitialLaunchData[key]
+                              )}`
+                          )
+                          .join("&"),
+                        method: "POST",
+                      }
+                    );
+
+                    const ltiLaunchHtml = await ltiLaunchResponse.text();
+                    const parser = new DOMParser();
+                    const html = parser.parseFromString(
+                      ltiLaunchHtml,
+                      "text/html"
+                    );
+                    const form = html.querySelector("form");
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData);
+                    console.log("Data:", data);
+
+                    const ltiLoginResponse = await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/contentviewers/ltilogin`,
+                      {
+                        headers: {
+                          "content-type": "application/x-www-form-urlencoded",
+                        },
+                        body: Object.keys(data)
+                          .map(
+                            (key) => `${key}=${encodeURIComponent(data[key])}`
+                          )
+                          .join("&"),
+                        method: "POST",
+                      }
+                    );
+
+                    const ltiLoginHtml = await ltiLoginResponse.text();
+                    const loginHtml = parser.parseFromString(
+                      ltiLoginHtml,
+                      "text/html"
+                    );
+                    const launchData =
+                      loginHtml.getElementById("launchdata").value;
+                    console.log(
+                      "Launch Data:",
+                      `${launchData.substring(0, 10)}...`
+                    );
+
+                    const activityResponse = await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/ContentViewers/AssessmentViewer/Activity`,
+                      {
+                        headers: {
+                          "content-type": "application/x-www-form-urlencoded",
+                        },
+                        body: `launchdata=${launchData}`,
+                        method: "POST",
+                      }
+                    );
+
+                    const activityHtml = await activityResponse.text();
+                    const parsedHtml = parser.parseFromString(
+                      activityHtml,
+                      "text/html"
+                    );
+
+                    const ids = Array.from(
+                      parsedHtml.querySelectorAll(".question-buttons ol li")
+                    )
+                      .slice(1, -1)
+                      .map((li) => li.id);
+
+                    console.log("Ids:", ids);
+
+                    const keyFromGM = GM_getValue("user_key", null);
+                    console.log("Key From GM:", keyFromGM);
+                    const userId = getUserID() || "null";
+                    console.log("User ID:", userId);
+                    const dbAnswers = await retrieveAnswersFromDB(
+                      ids,
+                      keyFromGM,
+                      userId
+                    );
+                    let parsedAnswers = JSON.parse(dbAnswers.responseText);
+
+                    parsedAnswers = parsedAnswers.map((x) => {
+                      if (x.question_id.startsWith("nq:")) {
+                        x.question_id = x.question_id.slice(3);
+                      }
+                      return x;
+                    });
+
+                    const ActivityKeys = {};
+                    parsedHtml.querySelectorAll("script").forEach((script) => {
+                      const scriptContent = script.textContent;
+                      if (scriptContent.includes("ActivityKeys")) {
+                        const keys = scriptContent.match(
+                          /this\.[a-zA-Z]+Key = "(.*?)";/g
+                        );
+                        keys.forEach((key) => {
+                          const keyName = key.match(/this\.([a-zA-Z]+Key)/)[1];
+                          const keyValue = key.match(/"([^"]+)"/)[1];
+                          ActivityKeys[keyName] = keyValue;
+                        });
+                      }
+                    });
+
+                    console.log("Activity Keys:", ActivityKeys);
+
+                    await Promise.all(
+                      ids.map((id) =>
+                        loadQuestion(id, parsedAnswers, ActivityKeys)
+                      )
+                    );
+
+                    await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/contentengineapi/api/assessment/SubmitAssessmentSimpleResponse?learningObjectKey=${ActivityKeys.learningObjectKey}&resultKey=${ActivityKeys.resultKey}&enrollmentKey=${ActivityKeys.enrollmentKey}&sessionKey=${ActivityKeys.sessionKey}&autoSubmitted=false&UpdateLastTime=true`
+                    );
+
+                    window.location.reload();
+                  } catch (error) {
+                    console.error("Error in overlay click handler:", error);
+                  }
+                };
+                clearInterval(waitForContainer);
+              }
+            };
+
+            waitForContainer = setInterval(intervalFunc, 3000);
+          }
+
+          // Check if eNotes button exists and activity type starts with 'A'
+          const eNotesBtn = document.getElementById("aEnotes");
+          if (nextActivityData.NextObjectType?.startsWith("A") && eNotesBtn) {
+            eNotesBtn.click();
+          }
+        } catch (error) {
+          console.error("Error fetching next activity data:", error);
+        }
+      });
+    }
 
     (0,_ui_js__WEBPACK_IMPORTED_MODULE_1__.initDraggableMenu)((conf) => {
       console.log("Config:", conf);
