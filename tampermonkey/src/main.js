@@ -1,7 +1,11 @@
 // src/main.js
 
 import { getAnswer, getHumanScore, saveDB } from "./api.js";
-import { displayHumanElement, initDraggableMenu } from "./ui.js";
+import {
+  displayHumanElement,
+  initDraggableMenu,
+  displayLessonNumber,
+} from "./ui.js";
 
 (function () {
   "use strict";
@@ -255,7 +259,386 @@ import { displayHumanElement, initDraggableMenu } from "./ui.js";
   }
 
   async function activateAutomaticWriting() {
+    let matchingEnrollment;
     console.log("Get started!!!~~~~~~~~~~~!!!");
+
+    const lms_base_url = initialization?.InitialLaunchData?.LMSAPIBasePath;
+    const prefix = lms_base_url.split("//")[1].split(".")[0];
+    console.log("lms_base_url:", prefix);
+
+    const session_user_id = initialization?.InitialLaunchData?.UserID;
+    console.log("Session User ID:", session_user_id);
+
+    const cookie_user_id = initialization?.pk;
+    console.log("Cookie User ID:", cookie_user_id);
+
+    // Get course name from the span element
+    const courseName = initialization?.InitialLaunchData?.CourseName;
+    console.log("Course name:", courseName);
+
+    displayLessonNumber(initialization?.InitialActivityData?.Progress);
+
+    // Get next activity data
+    // Add click event listener to Next Activity button
+    const nextActivityButton = document.querySelector("a.footnav.goRight");
+    if (nextActivityButton) {
+      nextActivityButton.addEventListener("click", async () => {
+        console.log("Next Activity Button clicked!!!!");
+        try {
+          console.log("Fetching next activity data...");
+
+          const activityId = initialization?.InitialActivityData?.ActivityOrder;
+          console.log("Activity ID:", activityId);
+          const ContextID = initialization?.InitialLaunchData?.ContextID;
+          console.log("Context ID:", ContextID);
+
+          const nextActivityResponse = await fetch(
+            `https://${prefix}.core.learn.edgenuity.com/lmsapi/req/navigation/getnextactivity?UserID=${session_user_id}&StudentBuildID=${ContextID}&ActivityOrder=${activityId}&IsSSLimited=False&AllowPretestsAndQuizzes=False`,
+            {
+              method: "GET",
+              credentials: "include",
+              headers: {
+                Accept: "application/json",
+              },
+            }
+          );
+
+          if (!nextActivityResponse.ok) {
+            throw new Error(
+              `HTTP error! status: ${nextActivityResponse.status}`
+            );
+          }
+
+          const nextActivityData = await nextActivityResponse.json();
+          const { IsRestrictedActivity } = nextActivityData?.Navigation;
+          console.log("Is Restricted:", IsRestrictedActivity);
+
+          if (IsRestrictedActivity) {
+            // Add brilliant shadow border if activity is restricted
+            let waitForContainer;
+            const intervalFunc = () => {
+              const stageFrame = getStageFrame();
+              const overlayContainers =
+                stageFrame?.contentWindow.document.querySelectorAll(
+                  ".overlay-attempt"
+                );
+              const overlayContainer = Array.from(overlayContainers).find(
+                (container) =>
+                  container.querySelector(
+                    ".overlay-attempt-button.overlay-attempt-button-lock"
+                  )
+              );
+              if (overlayContainer) {
+                overlayContainer.style.cursor = "pointer";
+                overlayContainer.style.border =
+                  "2px solid rgba(255, 215, 0, 0.7)";
+                overlayContainer.style.transition = "all 0.3s ease";
+
+                overlayContainer.addEventListener("mouseenter", () => {
+                  overlayContainer.style.boxShadow =
+                    "0 0 20px 10px rgba(255, 215, 0, 0.7)";
+                });
+
+                overlayContainer.addEventListener("mouseleave", () => {
+                  overlayContainer.style.boxShadow = "none";
+                });
+
+                overlayContainer.addEventListener("click", () => {
+                  overlayContainer.style.transform = "scale(0.95)";
+                  overlayContainer.style.boxShadow =
+                    "0 0 30px 15px rgba(255, 215, 0, 0.9)";
+                  setTimeout(() => {
+                    overlayContainer.style.transform = "scale(1)";
+                    overlayContainer.style.boxShadow = "none";
+                  }, 200);
+                });
+                overlayContainer.onclick = async () => {
+                  console.log(
+                    "Initial Activity Order:",
+                    initialization?.InitialActivityData?.ActivityOrder
+                  );
+
+                  // window.parent.Namespace.global().playerView.startActivity(
+                  //   initialization?.InitialActivityData?.ActivityOrder,
+                  //   function (warning) {
+                  //     if (warning == "NOATTEMPT")
+                  //       window.parent.Namespace.global()
+                  //         .playerView.stageView()
+                  //         .loadUrl(
+                  //           window.parent.Namespace.global().services.overlay
+                  //             .basepath +
+                  //             "?errormessage=" +
+                  //             encodeURIComponent(
+                  //               "You do not have any retakes available for this Assessment."
+                  //             )
+                  //         );
+                  //   }
+                  // );
+
+                  const loadQuestion = (id, parsedAnswers, ActivityKeys) => {
+                    let learningObjectKey = ActivityKeys.learningObjectKey;
+                    let resultKey = ActivityKeys.resultKey;
+                    let enrollmentKey = ActivityKeys.enrollmentKey;
+                    let sessionKey = ActivityKeys.sessionKey;
+
+                    return fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/ContentViewers/AssessmentViewer/LoadQuestion`,
+                      {
+                        headers: {
+                          "content-type":
+                            "application/x-www-form-urlencoded; charset=UTF-8",
+                        },
+                        body: `learningObjectKey=${learningObjectKey}&resultKey=${resultKey}&enrollmentKey=${enrollmentKey}&questionKey=${id}&sessionKey=${sessionKey}`,
+                        method: "POST",
+                      }
+                    )
+                      .then((res) => res.json())
+                      .then((res) => {
+                        const html = parser.parseFromString(
+                          res.html,
+                          "text/html"
+                        );
+
+                        let inputSelector =
+                          ".Practice_Question_Body .answer-choice input";
+                        let selectSelector =
+                          ".Practice_Question_Body select option";
+                        let inputTextSelector = "input[type='text']";
+
+                        let inputs = Array.from(
+                          html.querySelectorAll(inputSelector)
+                        ).map((li) => [li.name, li.value]);
+                        let selects = Array.from(
+                          html.querySelectorAll(selectSelector)
+                        )
+                          .map((option) => {
+                            if (option.hasAttribute("value")) {
+                              return [option.parentElement.name, option.value];
+                            }
+                          })
+                          .filter(Boolean);
+                        let inputTexts = Array.from(
+                          html.querySelectorAll(inputTextSelector)
+                        ).map((input) => [input.name, "FILL_WITH_TEXT"]);
+                        // console.log("YO BITH", inputs, selects, inputTexts);
+
+                        let answers = inputs.concat(selects).concat(inputTexts);
+                        let correctAnswers = parsedAnswers.filter((x) =>
+                          x.question_id.includes(id)
+                        );
+
+                        return changeQuestionAnswer(
+                          answers,
+                          id,
+                          correctAnswers,
+                          ActivityKeys
+                        );
+                      });
+                  };
+
+                  const changeQuestionAnswer = (
+                    answers,
+                    id,
+                    correctAnswers,
+                    ActivityKeys
+                  ) => {
+                    // console.log(answers, id, correctAnswers);
+
+                    let answerToChange = [];
+                    answers.find((answer) => {
+                      correctAnswers.forEach((correctAnswer) => {
+                        if (correctAnswer.question_id.includes(answer[1])) {
+                          answerToChange.push([answer[0], answer[1]]);
+                        } else if (
+                          answer[1] == "on" &&
+                          correctAnswer.question_id == answer[0]
+                        ) {
+                          answerToChange.push([answer[0], answer[1]]);
+                        } else if (answer[1] == "FILL_WITH_TEXT") {
+                          answerToChange.push([
+                            answer[0],
+                            correctAnswer.optional_data
+                              .trim()
+                              .replace(/"/g, ""),
+                          ]);
+                        }
+                      });
+                    });
+
+                    return fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/ContentViewers/AssessmentViewer/ChangeQuestionAnswer`,
+                      {
+                        headers: {
+                          "content-type":
+                            "application/x-www-form-urlencoded; charset=UTF-8",
+                        },
+                        body: `learningObjectKey=${
+                          ActivityKeys.learningObjectKey
+                        }&resultKey=${ActivityKeys.resultKey}&enrollmentKey=${
+                          ActivityKeys.enrollmentKey
+                        }&sessionKey=${
+                          ActivityKeys.sessionKey
+                        }&language=0&questionKey=${id}${answerToChange
+                          .map((answer) => `&${answer[0]}=${answer[1]}`)
+                          .join("")}`,
+                        method: "POST",
+                      }
+                    )
+                      .then((res) => res.json())
+                      .then((res) => {
+                        // console.log(res);
+                      });
+                  };
+
+                  try {
+                    const ltiLaunchResponse = await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/Player/LTILaunch`,
+                      {
+                        headers: {
+                          "content-type": "application/x-www-form-urlencoded",
+                        },
+                        body: Object.keys(initialization.InitialLaunchData)
+                          .map(
+                            (key) =>
+                              `${key}=${encodeURIComponent(
+                                initialization.InitialLaunchData[key]
+                              )}`
+                          )
+                          .join("&"),
+                        method: "POST",
+                      }
+                    );
+
+                    const ltiLaunchHtml = await ltiLaunchResponse.text();
+                    const parser = new DOMParser();
+                    const html = parser.parseFromString(
+                      ltiLaunchHtml,
+                      "text/html"
+                    );
+                    const form = html.querySelector("form");
+                    const formData = new FormData(form);
+                    const data = Object.fromEntries(formData);
+                    console.log("Data:", data);
+
+                    const ltiLoginResponse = await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/contentviewers/ltilogin`,
+                      {
+                        headers: {
+                          "content-type": "application/x-www-form-urlencoded",
+                        },
+                        body: Object.keys(data)
+                          .map(
+                            (key) => `${key}=${encodeURIComponent(data[key])}`
+                          )
+                          .join("&"),
+                        method: "POST",
+                      }
+                    );
+
+                    const ltiLoginHtml = await ltiLoginResponse.text();
+                    const loginHtml = parser.parseFromString(
+                      ltiLoginHtml,
+                      "text/html"
+                    );
+                    const launchData =
+                      loginHtml.getElementById("launchdata").value;
+                    console.log(
+                      "Launch Data:",
+                      `${launchData.substring(0, 10)}...`
+                    );
+
+                    const activityResponse = await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/ContentViewers/AssessmentViewer/Activity`,
+                      {
+                        headers: {
+                          "content-type": "application/x-www-form-urlencoded",
+                        },
+                        body: `launchdata=${launchData}`,
+                        method: "POST",
+                      }
+                    );
+
+                    const activityHtml = await activityResponse.text();
+                    const parsedHtml = parser.parseFromString(
+                      activityHtml,
+                      "text/html"
+                    );
+
+                    const ids = Array.from(
+                      parsedHtml.querySelectorAll(".question-buttons ol li")
+                    )
+                      .slice(1, -1)
+                      .map((li) => li.id);
+
+                    console.log("Ids:", ids);
+
+                    const keyFromGM = GM_getValue("user_key", null);
+                    console.log("Key From GM:", keyFromGM);
+                    const userId = getUserID() || "null";
+                    console.log("User ID:", userId);
+                    const dbAnswers = await retrieveAnswersFromDB(
+                      ids,
+                      keyFromGM,
+                      userId
+                    );
+                    let parsedAnswers = JSON.parse(dbAnswers.responseText);
+
+                    parsedAnswers = parsedAnswers.map((x) => {
+                      if (x.question_id.startsWith("nq:")) {
+                        x.question_id = x.question_id.slice(3);
+                      }
+                      return x;
+                    });
+
+                    const ActivityKeys = {};
+                    parsedHtml.querySelectorAll("script").forEach((script) => {
+                      const scriptContent = script.textContent;
+                      if (scriptContent.includes("ActivityKeys")) {
+                        const keys = scriptContent.match(
+                          /this\.[a-zA-Z]+Key = "(.*?)";/g
+                        );
+                        keys.forEach((key) => {
+                          const keyName = key.match(/this\.([a-zA-Z]+Key)/)[1];
+                          const keyValue = key.match(/"([^"]+)"/)[1];
+                          ActivityKeys[keyName] = keyValue;
+                        });
+                      }
+                    });
+
+                    console.log("Activity Keys:", ActivityKeys);
+
+                    await Promise.all(
+                      ids.map((id) =>
+                        loadQuestion(id, parsedAnswers, ActivityKeys)
+                      )
+                    );
+
+                    await fetch(
+                      `https://${prefix}.core.learn.edgenuity.com/contentengineapi/api/assessment/SubmitAssessmentSimpleResponse?learningObjectKey=${ActivityKeys.learningObjectKey}&resultKey=${ActivityKeys.resultKey}&enrollmentKey=${ActivityKeys.enrollmentKey}&sessionKey=${ActivityKeys.sessionKey}&autoSubmitted=false&UpdateLastTime=true`
+                    );
+
+                    window.location.reload();
+                  } catch (error) {
+                    console.error("Error in overlay click handler:", error);
+                  }
+                };
+                clearInterval(waitForContainer);
+              }
+            };
+
+            waitForContainer = setInterval(intervalFunc, 3000);
+          }
+
+          // Check if eNotes button exists and activity type starts with 'A'
+          const eNotesBtn = document.getElementById("aEnotes");
+          if (nextActivityData.NextObjectType?.startsWith("A") && eNotesBtn) {
+            eNotesBtn.click();
+          }
+        } catch (error) {
+          console.error("Error fetching next activity data:", error);
+        }
+      });
+    }
 
     initDraggableMenu((conf) => {
       console.log("Config:", conf);

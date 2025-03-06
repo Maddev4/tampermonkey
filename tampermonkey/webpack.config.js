@@ -13,14 +13,15 @@ module.exports = {
       banner: `// ==UserScript==
 // @name         Automatic Writing
 // @namespace    Revolt
-// @version      1.0
-// @description  Automatic writing assistant
+// @version      1.1
+// @description  Automatic writing assistant for Edgenuity
 // @author       Revolt
-// @match        https://r22.core.learn.edgenuity.com/player/
+// @match        https://*.core.learn.edgenuity.com/player/
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
-// @connect      localhost
+// @grant        GM_addStyle
+// @connect      *
 // ==/UserScript==`,
       raw: true,
     }),
