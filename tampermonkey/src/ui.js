@@ -16,7 +16,7 @@ export function displayHumanElement(text, score = null) {
           z-index: 1000;
           display: flex;
           flex-direction: column;
-          background: rgba(15, 23, 42, 0.75);
+          background: #141517;
           padding: 10px;
           border-radius: 12px;
           font-size: 14px;
@@ -41,7 +41,7 @@ export function displayHumanElement(text, score = null) {
       }
       .human-circle {
           fill: transparent;
-          stroke: rgb(56, 189, 248);
+          stroke: #006cff;
           stroke-width: 10;
           transition: stroke-dashoffset 1.5s ease-in-out;
       }
@@ -154,7 +154,7 @@ export function initDraggableMenu(onStartCallback) {
           <div class="menu-body">
             <div class="menu-row">
               <label>Submit delay:</label>
-              <div class="input-group">
+              <div class="input-group" style="width: 100%;">
                 <div class="input-with-unit">
                   <input type="number" min="0" step="1" value="0" id="submitDelay1">
                   <span class="input-unit">sec</span>
@@ -168,15 +168,15 @@ export function initDraggableMenu(onStartCallback) {
             </div>
             <div class="menu-row">
               <label>Answer delay:</label>
-              <div class="typing-dropdown answer-delay-dropdown">
+              <div class="typing-dropdown answer-delay-dropdown" style="width: 100% !important;">
                 <button class="dropdown-btn" id="answerDelayBtn">None</button>
                 <div class="dropdown-content">
                   <div class="dropdown-option" data-value="none">None</div>
                   <div class="dropdown-option" data-value="custom">Custom</div>
                 </div>
               </div>
-              <div class="input-with-unit custom-delay-input" style="display: none; width: 80px;">
-                <input type="number" min="0" step="1" value="0" id="answerDelay">
+              <div class="input-with-unit custom-delay-input" style="display: none; width: 60px;">
+                <input type="number" min="0" step="1" value="0" id="answerDelay" style="width: 60px !important;">
                 <span class="input-unit">wpm</span>
               </div>
             </div>
@@ -249,8 +249,8 @@ export function initDraggableMenu(onStartCallback) {
 
     .menu-title {
       color: white;
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 24px;
+      font-weight: 800;
     }
 
     .menu-items {
@@ -306,12 +306,12 @@ export function initDraggableMenu(onStartCallback) {
     .input-group {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
     }
 
     .input-with-unit {
       position: relative;
-      width: 65px;
+      width: 60px;
     }
 
     input[type="number"] {
@@ -346,7 +346,7 @@ export function initDraggableMenu(onStartCallback) {
 
     .typing-dropdown {
       position: relative;
-      width: 150px;
+      width: 100%;
     }
 
     .dropdown-btn {
@@ -410,10 +410,6 @@ export function initDraggableMenu(onStartCallback) {
 
     .typing-dropdown.active .dropdown-content {
       display: block;
-    }
-
-    .answer-delay-dropdown {
-      margin-right: 8px;
     }
 
     .custom-delay-input {
@@ -633,8 +629,9 @@ export function displayLessonNumber(number) {
 
       .lesson-number {
         display: flex;
+        flex-direction: column;
         justify-content: center;
-        align-items: center;
+        align-items: flex-start;
         width: 100%;
         font-size: 15px;
         font-weight: 600;
@@ -650,6 +647,21 @@ export function displayLessonNumber(number) {
         position: relative;
       }
 
+      .progress-bar {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #242526;
+        border-radius: 10px;
+      }
+
+      .progress-text {
+        margin-top: 8px;
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -661,29 +673,29 @@ export function displayLessonNumber(number) {
         }
       }
 
-      .lesson-number::before {
+      .progress-bar::before {
         content: '';
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         height: 10px;
-        width: 90%;
+        width: 100%;
         background: #242526;
-        border-radius: 5px;
+        border-radius: 10px;
       }
 
-      .lesson-number::after {
+      .progress-bar::after {
         content: '';
         position: absolute;
         top: 50%;
-        left: 5%;
+        left: 0;
         transform: translateY(-50%);
         height: 10px;
         width: 0%;
         background: #006cff;
         animation: fillBar 1s ease-out forwards;
-        border-radius: 5px;
+        border-radius: 10px;
         box-shadow: 0 0 10px rgba(0, 108, 255, 0.3);
       }
 
@@ -692,7 +704,7 @@ export function displayLessonNumber(number) {
           width: 0%;
         }
         to {
-          width: calc(90% * var(--progress) / 100);
+          width: calc(100% * var(--progress) / 100);
         }
       }
     `;
@@ -708,6 +720,15 @@ export function displayLessonNumber(number) {
 
     const numberElement = document.createElement("span");
     numberElement.className = "lesson-number";
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+
+    const progressText = document.createElement("div");
+    progressText.className = "progress-text";
+
+    numberElement.appendChild(progressBar);
+    numberElement.appendChild(progressText);
     container.appendChild(numberElement);
 
     document.body.appendChild(container);
@@ -730,10 +751,15 @@ export function displayLessonNumber(number) {
 
   // Update the number with animation
   const numberElement = container.querySelector(".lesson-number");
+  const progressText = numberElement.querySelector(".progress-text");
+
   numberElement.style.animation = "none";
   numberElement.offsetHeight; // Trigger reflow
   numberElement.style.animation = "fadeIn 0.3s ease-out";
-  numberElement.textContent = ""; // Remove the percentage text
+
   // Set the progress percentage as a CSS variable
   numberElement.style.setProperty("--progress", `${number}`);
+
+  // Update progress text
+  progressText.textContent = `You are ${number}% completed`;
 }

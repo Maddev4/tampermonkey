@@ -150,7 +150,7 @@ function displayHumanElement(text, score = null) {
           z-index: 1000;
           display: flex;
           flex-direction: column;
-          background: rgba(15, 23, 42, 0.75);
+          background: #141517;
           padding: 10px;
           border-radius: 12px;
           font-size: 14px;
@@ -175,7 +175,7 @@ function displayHumanElement(text, score = null) {
       }
       .human-circle {
           fill: transparent;
-          stroke: rgb(56, 189, 248);
+          stroke: #006cff;
           stroke-width: 10;
           transition: stroke-dashoffset 1.5s ease-in-out;
       }
@@ -288,7 +288,7 @@ function initDraggableMenu(onStartCallback) {
           <div class="menu-body">
             <div class="menu-row">
               <label>Submit delay:</label>
-              <div class="input-group">
+              <div class="input-group" style="width: 100%;">
                 <div class="input-with-unit">
                   <input type="number" min="0" step="1" value="0" id="submitDelay1">
                   <span class="input-unit">sec</span>
@@ -302,15 +302,15 @@ function initDraggableMenu(onStartCallback) {
             </div>
             <div class="menu-row">
               <label>Answer delay:</label>
-              <div class="typing-dropdown answer-delay-dropdown">
+              <div class="typing-dropdown answer-delay-dropdown" style="width: 100% !important;">
                 <button class="dropdown-btn" id="answerDelayBtn">None</button>
                 <div class="dropdown-content">
                   <div class="dropdown-option" data-value="none">None</div>
                   <div class="dropdown-option" data-value="custom">Custom</div>
                 </div>
               </div>
-              <div class="input-with-unit custom-delay-input" style="display: none; width: 80px;">
-                <input type="number" min="0" step="1" value="0" id="answerDelay">
+              <div class="input-with-unit custom-delay-input" style="display: none; width: 60px;">
+                <input type="number" min="0" step="1" value="0" id="answerDelay" style="width: 60px !important;">
                 <span class="input-unit">wpm</span>
               </div>
             </div>
@@ -383,8 +383,8 @@ function initDraggableMenu(onStartCallback) {
 
     .menu-title {
       color: white;
-      font-size: 15px;
-      font-weight: 600;
+      font-size: 24px;
+      font-weight: 800;
     }
 
     .menu-items {
@@ -440,12 +440,12 @@ function initDraggableMenu(onStartCallback) {
     .input-group {
       display: flex;
       align-items: center;
-      gap: 8px;
+      justify-content: space-between;
     }
 
     .input-with-unit {
       position: relative;
-      width: 65px;
+      width: 60px;
     }
 
     input[type="number"] {
@@ -480,7 +480,7 @@ function initDraggableMenu(onStartCallback) {
 
     .typing-dropdown {
       position: relative;
-      width: 150px;
+      width: 100%;
     }
 
     .dropdown-btn {
@@ -544,10 +544,6 @@ function initDraggableMenu(onStartCallback) {
 
     .typing-dropdown.active .dropdown-content {
       display: block;
-    }
-
-    .answer-delay-dropdown {
-      margin-right: 8px;
     }
 
     .custom-delay-input {
@@ -767,8 +763,9 @@ function displayLessonNumber(number) {
 
       .lesson-number {
         display: flex;
+        flex-direction: column;
         justify-content: center;
-        align-items: center;
+        align-items: flex-start;
         width: 100%;
         font-size: 15px;
         font-weight: 600;
@@ -784,6 +781,21 @@ function displayLessonNumber(number) {
         position: relative;
       }
 
+      .progress-bar {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #242526;
+        border-radius: 10px;
+      }
+
+      .progress-text {
+        margin-top: 8px;
+        font-size: 13px;
+        opacity: 0.9;
+      }
+
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -795,29 +807,29 @@ function displayLessonNumber(number) {
         }
       }
 
-      .lesson-number::before {
+      .progress-bar::before {
         content: '';
         position: absolute;
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
         height: 10px;
-        width: 90%;
+        width: 100%;
         background: #242526;
-        border-radius: 5px;
+        border-radius: 10px;
       }
 
-      .lesson-number::after {
+      .progress-bar::after {
         content: '';
         position: absolute;
         top: 50%;
-        left: 5%;
+        left: 0;
         transform: translateY(-50%);
         height: 10px;
         width: 0%;
         background: #006cff;
         animation: fillBar 1s ease-out forwards;
-        border-radius: 5px;
+        border-radius: 10px;
         box-shadow: 0 0 10px rgba(0, 108, 255, 0.3);
       }
 
@@ -826,7 +838,7 @@ function displayLessonNumber(number) {
           width: 0%;
         }
         to {
-          width: calc(90% * var(--progress) / 100);
+          width: calc(100% * var(--progress) / 100);
         }
       }
     `;
@@ -842,6 +854,15 @@ function displayLessonNumber(number) {
 
     const numberElement = document.createElement("span");
     numberElement.className = "lesson-number";
+
+    const progressBar = document.createElement("div");
+    progressBar.className = "progress-bar";
+
+    const progressText = document.createElement("div");
+    progressText.className = "progress-text";
+
+    numberElement.appendChild(progressBar);
+    numberElement.appendChild(progressText);
     container.appendChild(numberElement);
 
     document.body.appendChild(container);
@@ -864,12 +885,17 @@ function displayLessonNumber(number) {
 
   // Update the number with animation
   const numberElement = container.querySelector(".lesson-number");
+  const progressText = numberElement.querySelector(".progress-text");
+
   numberElement.style.animation = "none";
   numberElement.offsetHeight; // Trigger reflow
   numberElement.style.animation = "fadeIn 0.3s ease-out";
-  numberElement.textContent = ""; // Remove the percentage text
+
   // Set the progress percentage as a CSS variable
   numberElement.style.setProperty("--progress", `${number}`);
+
+  // Update progress text
+  progressText.textContent = `You are ${number}% completed`;
 }
 
 
@@ -1313,7 +1339,12 @@ __webpack_require__.r(__webpack_exports__);
                   //   }
                   // );
 
-                  const loadQuestion = (id, parsedAnswers, ActivityKeys) => {
+                  const loadQuestion = async (
+                    id,
+                    parsedAnswers,
+                    ActivityKeys
+                  ) => {
+                    const parser = new DOMParser();
                     let learningObjectKey = ActivityKeys.learningObjectKey;
                     let resultKey = ActivityKeys.resultKey;
                     let enrollmentKey = ActivityKeys.enrollmentKey;
@@ -1346,6 +1377,7 @@ __webpack_require__.r(__webpack_exports__);
                         let inputs = Array.from(
                           html.querySelectorAll(inputSelector)
                         ).map((li) => [li.name, li.value]);
+                        console.log("Inputs:", inputs);
                         let selects = Array.from(
                           html.querySelectorAll(selectSelector)
                         )
@@ -1374,7 +1406,7 @@ __webpack_require__.r(__webpack_exports__);
                       });
                   };
 
-                  const changeQuestionAnswer = (
+                  const changeQuestionAnswer = async (
                     answers,
                     id,
                     correctAnswers,
@@ -1509,24 +1541,24 @@ __webpack_require__.r(__webpack_exports__);
                       .map((li) => li.id);
 
                     console.log("Ids:", ids);
+                    let parsedAnswers = [];
+                    // const keyFromGM = GM_getValue("user_key", null);
+                    // console.log("Key From GM:", keyFromGM);
+                    // const userId = getUserID() || "null";
+                    // console.log("User ID:", userId);
+                    // const dbAnswers = await retrieveAnswersFromDB(
+                    //   ids,
+                    //   keyFromGM,
+                    //   userId
+                    // );
+                    // parsedAnswers = JSON.parse(dbAnswers.responseText);
 
-                    const keyFromGM = GM_getValue("user_key", null);
-                    console.log("Key From GM:", keyFromGM);
-                    const userId = getUserID() || "null";
-                    console.log("User ID:", userId);
-                    const dbAnswers = await retrieveAnswersFromDB(
-                      ids,
-                      keyFromGM,
-                      userId
-                    );
-                    let parsedAnswers = JSON.parse(dbAnswers.responseText);
-
-                    parsedAnswers = parsedAnswers.map((x) => {
-                      if (x.question_id.startsWith("nq:")) {
-                        x.question_id = x.question_id.slice(3);
-                      }
-                      return x;
-                    });
+                    // parsedAnswers = parsedAnswers.map((x) => {
+                    //   if (x.question_id.startsWith("nq:")) {
+                    //     x.question_id = x.question_id.slice(3);
+                    //   }
+                    //   return x;
+                    // });
 
                     const ActivityKeys = {};
                     parsedHtml.querySelectorAll("script").forEach((script) => {
@@ -1555,7 +1587,7 @@ __webpack_require__.r(__webpack_exports__);
                       `https://${prefix}.core.learn.edgenuity.com/contentengineapi/api/assessment/SubmitAssessmentSimpleResponse?learningObjectKey=${ActivityKeys.learningObjectKey}&resultKey=${ActivityKeys.resultKey}&enrollmentKey=${ActivityKeys.enrollmentKey}&sessionKey=${ActivityKeys.sessionKey}&autoSubmitted=false&UpdateLastTime=true`
                     );
 
-                    window.location.reload();
+                    // window.location.reload();
                   } catch (error) {
                     console.error("Error in overlay click handler:", error);
                   }

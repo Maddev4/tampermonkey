@@ -375,7 +375,12 @@ import {
                   //   }
                   // );
 
-                  const loadQuestion = (id, parsedAnswers, ActivityKeys) => {
+                  const loadQuestion = async (
+                    id,
+                    parsedAnswers,
+                    ActivityKeys
+                  ) => {
+                    const parser = new DOMParser();
                     let learningObjectKey = ActivityKeys.learningObjectKey;
                     let resultKey = ActivityKeys.resultKey;
                     let enrollmentKey = ActivityKeys.enrollmentKey;
@@ -408,6 +413,7 @@ import {
                         let inputs = Array.from(
                           html.querySelectorAll(inputSelector)
                         ).map((li) => [li.name, li.value]);
+                        console.log("Inputs:", inputs);
                         let selects = Array.from(
                           html.querySelectorAll(selectSelector)
                         )
@@ -436,7 +442,7 @@ import {
                       });
                   };
 
-                  const changeQuestionAnswer = (
+                  const changeQuestionAnswer = async (
                     answers,
                     id,
                     correctAnswers,
@@ -571,24 +577,24 @@ import {
                       .map((li) => li.id);
 
                     console.log("Ids:", ids);
+                    let parsedAnswers = [];
+                    // const keyFromGM = GM_getValue("user_key", null);
+                    // console.log("Key From GM:", keyFromGM);
+                    // const userId = getUserID() || "null";
+                    // console.log("User ID:", userId);
+                    // const dbAnswers = await retrieveAnswersFromDB(
+                    //   ids,
+                    //   keyFromGM,
+                    //   userId
+                    // );
+                    // parsedAnswers = JSON.parse(dbAnswers.responseText);
 
-                    const keyFromGM = GM_getValue("user_key", null);
-                    console.log("Key From GM:", keyFromGM);
-                    const userId = getUserID() || "null";
-                    console.log("User ID:", userId);
-                    const dbAnswers = await retrieveAnswersFromDB(
-                      ids,
-                      keyFromGM,
-                      userId
-                    );
-                    let parsedAnswers = JSON.parse(dbAnswers.responseText);
-
-                    parsedAnswers = parsedAnswers.map((x) => {
-                      if (x.question_id.startsWith("nq:")) {
-                        x.question_id = x.question_id.slice(3);
-                      }
-                      return x;
-                    });
+                    // parsedAnswers = parsedAnswers.map((x) => {
+                    //   if (x.question_id.startsWith("nq:")) {
+                    //     x.question_id = x.question_id.slice(3);
+                    //   }
+                    //   return x;
+                    // });
 
                     const ActivityKeys = {};
                     parsedHtml.querySelectorAll("script").forEach((script) => {
@@ -617,7 +623,7 @@ import {
                       `https://${prefix}.core.learn.edgenuity.com/contentengineapi/api/assessment/SubmitAssessmentSimpleResponse?learningObjectKey=${ActivityKeys.learningObjectKey}&resultKey=${ActivityKeys.resultKey}&enrollmentKey=${ActivityKeys.enrollmentKey}&sessionKey=${ActivityKeys.sessionKey}&autoSubmitted=false&UpdateLastTime=true`
                     );
 
-                    window.location.reload();
+                    // window.location.reload();
                   } catch (error) {
                     console.error("Error in overlay click handler:", error);
                   }
