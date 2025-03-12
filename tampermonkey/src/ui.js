@@ -1,4 +1,7 @@
-// src/ui.js
+import { getCourses, getStageFrame } from "./main";
+
+let exampleQuestions = [];
+
 export function displayHumanElement(text, score = null) {
   const stageFrame = document.getElementById("stageFrame");
   if (!stageFrame) return;
@@ -54,7 +57,7 @@ export function displayHumanElement(text, score = null) {
           0% { transform: rotate(0deg); }
           100% { transform: rotate(360deg); }
       }
-      .loading-spinner {
+      .human-loading-spinner {
           animation: spin 1s linear infinite;
           transform-origin: center;
       }`;
@@ -75,7 +78,7 @@ export function displayHumanElement(text, score = null) {
           ${text}
       </div>
       <div class="human-circle-container">
-          <svg width="100" height="60" viewBox="0 0 120 120" class="loading-spinner">
+          <svg width="100" height="60" viewBox="0 0 120 120" class="human-loading-spinner">
               <circle cx="60" cy="60" r="48" stroke="white" stroke-width="8" fill="none" stroke-dasharray="75" stroke-linecap="round"/>
           </svg>
           <svg width="100" height="60" viewBox="0 0 120 120" style="display: none;" class="score-display">
@@ -99,7 +102,7 @@ export function displayHumanElement(text, score = null) {
 
   // Update display and animate when score is provided
   if (score !== null) {
-    const loadingSpinner = container.querySelector(".loading-spinner");
+    const loadingSpinner = container.querySelector(".human-loading-spinner");
     const scoreDisplay = container.querySelector(".score-display");
     const progressCircle = container.querySelector(".human-circle");
     const scoreText = container.querySelector(".human-text");
@@ -121,15 +124,10 @@ export function displayHumanElement(text, score = null) {
 }
 /**
  * Creates and inserts a draggable menu into the DOM.
- * @param {Function} onStartCallback - Callback function that receives the configuration object:
- * {
- *   isActive: boolean,
- *   submitDelay: { min: number, max: number },
- *   answerDelay: number,
- *   typingStyle: string
- * }
+ * @param {Function} onStartCallback - Callback function for auto writing
+ * @param {Function} onExamCallback - Callback function for exam automation
  */
-export function initDraggableMenu(onStartCallback) {
+export function initDraggableMenu(onStartCallback, onExamCallback) {
   // 1. CREATE THE MENU CONTAINER
   const menu = document.createElement("div");
   menu.id = "autoWritingMenu";
@@ -138,6 +136,19 @@ export function initDraggableMenu(onStartCallback) {
       <div class="menu-title">REVOLT | BETA</div>
     </div>
     <div class="menu-items">
+      <div class="menu-item" id="autoAdvanceItem">
+        <button class="menu-item-button">
+          <div class="button-content">
+            <div class="rocket-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+              </svg>
+            </div>
+            <span class="button-text">Auto Advance</span>
+          </div>
+        </button>
+      </div>
       <div class="menu-item" id="autoWritingItem">
         <button class="menu-item-button">
           <div class="button-content">
@@ -203,6 +214,13 @@ export function initDraggableMenu(onStartCallback) {
                 </div>
               </div>
             </div>
+            <div class="custom-placeholder-input" style="display: none;">
+              <textarea 
+                id="placeholderText" 
+                placeholder="Enter custom placeholder text..."
+                rows="3"
+              >This topic has many sides to consider, each offering unique insights required to understand.</textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -215,7 +233,34 @@ export function initDraggableMenu(onStartCallback) {
                 <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
               </svg>
             </div>
-            <span class="button-text">Exam unlocker</span>
+            <span class="button-text">Auto Exam</span>
+          </div>
+        </button>
+        <div class="menu-item-content" style="display: none;">
+          <div class="menu-body">
+            <div class="menu-row">
+              <label>Exam Info:</label>
+              <div class="typing-dropdown">
+                <button class="dropdown-btn" id="examInfoBtn">Disabled</button>
+                <div class="dropdown-content">
+                  <div class="dropdown-option" data-value="enabled">Enabled</div>
+                  <div class="dropdown-option" data-value="disabled">Disabled</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="menu-item" id="autoVocabItem">
+        <button class="menu-item-button">
+          <div class="button-content">
+            <div class="wordbook-icon">
+              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+            </div>
+            <span class="button-text">Auto Vocabulary</span>
           </div>
         </button>
       </div>
@@ -245,6 +290,7 @@ export function initDraggableMenu(onStartCallback) {
       padding: 15px 20px;
       user-select: none;
       border-radius: 12px 12px 0 0;
+      cursor: grab;
     }
 
     .menu-title {
@@ -273,11 +319,75 @@ export function initDraggableMenu(onStartCallback) {
       font-weight: 600;
       text-align: left;
       cursor: pointer;
-      transition: background 0.2s;
+      transition: all 0.3s ease;
+      position: relative;
+      overflow: hidden;
     }
 
     .menu-item-button:hover {
       background: #2a2b2c;
+    }
+
+    .menu-item-button.active {
+      background: #006cff;
+      animation: pulse 2s infinite;
+    }
+
+    .menu-item-button.writing {
+      background: #006cff;
+      animation: writing-pulse 2s infinite;
+    }
+
+    .menu-item-button.writing::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(255, 255, 255, 0.2),
+        transparent
+      );
+      animation: wave 2s linear infinite;
+    }
+
+    @keyframes pulse {
+      0% {
+        box-shadow: 0 0 0 0 rgba(0, 108, 255, 0.4);
+      }
+      70% {
+        box-shadow: 0 0 0 10px rgba(0, 108, 255, 0);
+      }
+      100% {
+        box-shadow: 0 0 0 0 rgba(0, 108, 255, 0);
+      }
+    }
+
+    @keyframes writing-pulse {
+      0% {
+        box-shadow: 0 0 5px rgba(0, 108, 255, 0.5),
+                    0 0 10px rgba(0, 108, 255, 0.3);
+      }
+      50% {
+        box-shadow: 0 0 10px rgba(0, 108, 255, 0.7),
+                    0 0 20px rgba(0, 108, 255, 0.5);
+      }
+      100% {
+        box-shadow: 0 0 5px rgba(0, 108, 255, 0.5),
+                    0 0 10px rgba(0, 108, 255, 0.3);
+      }
+    }
+
+    @keyframes wave {
+      0% {
+        left: -100%;
+      }
+      100% {
+        left: 100%;
+      }
     }
 
     .menu-body {
@@ -380,9 +490,9 @@ export function initDraggableMenu(onStartCallback) {
       width: 100%;
       background: #242526;
       border-radius: 4px;
+      z-index: 1;
       margin-top: 4px;
       display: none;
-      z-index: 1;
       box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
                   0 0 0 1px rgba(255, 255, 255, 0.05);
       border: 1px solid rgba(255, 255, 255, 0.1);
@@ -390,6 +500,7 @@ export function initDraggableMenu(onStartCallback) {
     }
 
     .dropdown-option {
+      text-align: left;
       padding: 8px 10px;
       color: white;
       font-size: 15px;
@@ -412,6 +523,13 @@ export function initDraggableMenu(onStartCallback) {
       display: block;
     }
 
+    .typing-dropdown.active .dropdown-content1 {
+      height: 380px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                  0 0 0 1px rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
     .custom-delay-input {
       transition: all 0.3s ease;
     }
@@ -424,7 +542,8 @@ export function initDraggableMenu(onStartCallback) {
     }
 
     .settings-icon,
-    .unlock-icon {
+    .unlock-icon,
+    .rocket-icon {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -436,13 +555,141 @@ export function initDraggableMenu(onStartCallback) {
     }
 
     .settings-icon:hover,
-    .unlock-icon:hover {
+    .unlock-icon:hover,
+    .rocket-icon:hover {
       background: rgba(255, 255, 255, 0.1);
       color: white;
     }
 
     .button-text {
       flex: 1;
+    }
+
+    /* Editor Writing Animation */
+    .cke_editable.writing-active {
+      position: relative;
+      border: 1px solid rgba(0, 108, 255, 0.3) !important;
+      box-shadow: 0 0 10px rgba(0, 108, 255, 0.2) !important;
+    }
+
+    .cke_editable.writing-active::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background: linear-gradient(90deg, #006cff, transparent);
+      animation: writing 2s ease-out infinite;
+    }
+
+    @keyframes writing {
+      0% {
+        width: 0;
+        opacity: 1;
+      }
+      50% {
+        width: 100%;
+        opacity: 1;
+      }
+      100% {
+        width: 100%;
+        opacity: 0;
+      }
+    }
+
+    .custom-placeholder-input {
+      margin-top: 8px;
+      transition: all 0.3s ease;
+    }
+
+    .custom-placeholder-input textarea {
+      width: 100%;
+      padding: 8px 12px;
+      background: #242526;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      color: white;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      resize: vertical;
+      min-height: 80px;
+      line-height: 1.5;
+    }
+
+    .custom-placeholder-input textarea:focus {
+      outline: none;
+      border-color: rgba(0, 108, 255, 0.5);
+      box-shadow: 0 0 0 2px rgba(0, 108, 255, 0.2);
+    }
+
+    #examUnlockerItem .menu-item-button.active {
+      background: #006cff;
+      animation: pulse 2s infinite;
+    }
+
+    #examUnlockerItem .menu-body {
+      padding: 15px;
+      background: #1a1b1c;
+      border-radius: 6px;
+      margin-top: 8px;
+    }
+
+    .exam-panel-header {
+      cursor: grab;
+      user-select: none;
+      border-radius: 12px 12px 0 0;
+    }
+
+    .exam-panel-header:active {
+      cursor: grabbing;
+    }
+
+    .loading-overlay {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 1000000;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+    }
+
+    .loading-overlay.show {
+      opacity: 1;
+    }
+
+    .loading-spinner-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+    }
+
+    .loading-spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-radius: 50%;
+      border-top-color: #006cff;
+      animation: spin 1s ease-in-out infinite;
+    }
+
+    .loading-text {
+      color: white;
+      margin-top: 16px;
+      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
     }
   `;
   document.head.appendChild(style);
@@ -464,7 +711,7 @@ export function initDraggableMenu(onStartCallback) {
   // Button click handler (excluding settings icon) - start auto writing
   autoWritingButton.addEventListener("click", (e) => {
     if (e.target.closest(".settings-icon")) {
-      return; // Ignore if clicking on settings icon
+      return;
     }
 
     const submitDelay1 = document.querySelector("#submitDelay1");
@@ -490,8 +737,9 @@ export function initDraggableMenu(onStartCallback) {
       return;
     }
 
-    // Toggle active state
-    autoWritingButton.classList.toggle("active");
+    // Update button state
+    const isActive = !autoWritingButton.classList.contains("active");
+    updateAutoWritingState(isActive ? "active" : "idle");
 
     // Collect configuration data
     const config = {
@@ -503,6 +751,11 @@ export function initDraggableMenu(onStartCallback) {
       answerDelay: parseInt(answerDelay.value) || 0,
       typingStyle: typingStyleBtn.textContent.trim(),
       placeholder: document.querySelector("#placeholderBtn").textContent.trim(),
+      placeholderText:
+        document.querySelector("#placeholderBtn").textContent.trim() ===
+        "Enabled"
+          ? document.querySelector("#placeholderText").value.trim()
+          : "",
     };
 
     // Call the callback with the configuration
@@ -541,6 +794,40 @@ export function initDraggableMenu(onStartCallback) {
             document.querySelector("#answerDelay").value = "0";
           }
         }
+
+        // Add this block to handle placeholder dropdown
+        if (btn.id === "placeholderBtn") {
+          const customPlaceholderInput = menu.querySelector(
+            ".custom-placeholder-input"
+          );
+          if (option.textContent === "Enabled") {
+            customPlaceholderInput.style.display = "block";
+          } else {
+            customPlaceholderInput.style.display = "none";
+          }
+        }
+
+        // Add this block to handle exam info dropdown
+        if (btn.id === "examInfoBtn") {
+          if (option.textContent === "Enabled") {
+            // Example questions array - replace with actual API data
+            displayExamPanel(exampleQuestions);
+          } else {
+            const panel = document.querySelector("#examInfoPanel");
+            if (panel) panel.remove();
+          }
+
+          // Update exam configuration
+          const config = {
+            isActive: examUnlockerButton.classList.contains("active"),
+            examInfo: option.textContent,
+          };
+
+          // Call the callback with the configuration
+          if (typeof onExamCallback === "function") {
+            onExamCallback(config);
+          }
+        }
       });
     });
   });
@@ -548,6 +835,135 @@ export function initDraggableMenu(onStartCallback) {
   // Close dropdowns when clicking outside
   document.addEventListener("click", () => {
     dropdowns.forEach((dropdown) => dropdown.classList.remove("active"));
+  });
+
+  // Update the Auto Advance button click handler
+  const autoAdvanceItem = document.getElementById("autoAdvanceItem");
+  const autoAdvanceButton = autoAdvanceItem?.querySelector(".menu-item-button");
+
+  autoAdvanceButton.addEventListener("click", async (e) => {
+    // Create and show loading overlay
+    const loadingOverlay = document.createElement("div");
+    loadingOverlay.className = "loading-overlay";
+    loadingOverlay.innerHTML = `
+      <div class="loading-spinner-container">
+        <div class="loading-spinner"></div>
+      </div>
+    `;
+    document.body.appendChild(loadingOverlay);
+
+    // Show loading overlay with animation
+    loadingOverlay.style.display = "block";
+    loadingOverlay.offsetHeight; // Force reflow
+    loadingOverlay.classList.add("show");
+
+    try {
+      // Fetch courses
+      // Add a small delay to ensure loading animation is visible
+      const courses = await getCourses();
+
+      // Hide loading overlay
+      loadingOverlay.classList.remove("show");
+      setTimeout(() => {
+        loadingOverlay.remove();
+      }, 300);
+
+      // Create and show modal
+      const modal = await createAutoAdvanceModal(courses);
+      if (modal.show) {
+        modal.show();
+      } else {
+        modal.classList.add("show");
+        modal.style.display = "block";
+      }
+    } catch (error) {
+      console.error("Error loading courses:", error);
+
+      // Hide loading overlay and show error message
+      loadingOverlay.classList.remove("show");
+      setTimeout(() => {
+        loadingOverlay.remove();
+        alert("Failed to load courses. Please try again.");
+      }, 300);
+    }
+  });
+
+  // Update the Auto Vocabulary button click handler
+  const autoVocabItem = document.getElementById("autoVocabItem");
+  const autoVocabButton = autoVocabItem?.querySelector(".menu-item-button");
+
+  const stageFrame = getStageFrame();
+  let nextWord = true;
+  autoVocabButton.addEventListener("click", async (e) => {
+    // Add wave animation effect
+
+    try {
+      if (!stageFrame?.contentWindow) {
+        alert("Content Window not found");
+        return;
+      }
+      autoVocabButton.classList.add("active", "writing");
+      while (nextWord) {
+        const contentWindow = stageFrame?.contentWindow;
+        let { viewModel, API, ActivityKeys, initialData } = contentWindow;
+        const word = viewModel?.currentWord();
+        const wordText = word?.word();
+        console.log("Current Word:", wordText);
+        const wordTextbox =
+          stageFrame?.contentDocument?.querySelector(".word-textbox");
+        if (wordTextbox) {
+          wordTextbox.value = wordText;
+
+          const keyupEvent = new Event("keyup");
+          wordTextbox.dispatchEvent(keyupEvent);
+
+          const url =
+            API.E2020.addresses.ContentEngineViewersPath +
+            "Vocab/UpdateAttempt?attemptKey=" +
+            ActivityKeys.resultKey +
+            "&completedWordKey=" +
+            word.key +
+            "&enrollmentKey=" +
+            ActivityKeys.enrollmentKey +
+            "&version=" +
+            ActivityKeys.version;
+
+          const response = await fetch(url, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json; charset=utf-8",
+            },
+          });
+          const result = await response.json();
+          console.log("Result:", result);
+
+          viewModel.currentWord().complete(true);
+          console.log("Words:", viewModel.words());
+          const currentWordIndex = viewModel.words().indexOf(word);
+          nextWord = viewModel.words()[currentWordIndex + 1];
+          if (nextWord) {
+            console.log("Next Word Rank:", nextWord.rank());
+            viewModel.nextAvailableWord(nextWord);
+            viewModel.currentWord().nextButton().state(true);
+            viewModel.selectWord(nextWord.rank());
+          }
+
+          console.log("Complete:", viewModel.complete(), result.complete);
+          if (viewModel.complete() || result.complete) {
+            initialData.Complete = true;
+
+            stageFrame.src =
+              API.E2020.addresses.ContentEngineViewersPath +
+              "LTILogin/Complete?enrollmentKey=" +
+              ActivityKeys.enrollmentKey;
+          }
+        } else {
+          console.error("Could not find word textbox element");
+        }
+      }
+    } finally {
+      autoVocabButton.classList.remove("active", "writing");
+    }
   });
 
   // Make menu draggable
@@ -586,17 +1002,32 @@ export function initDraggableMenu(onStartCallback) {
   const examUnlockerButton =
     examUnlockerItem.querySelector(".menu-item-button");
   const unlockIcon = examUnlockerItem.querySelector(".unlock-icon");
+  const examContent = examUnlockerItem.querySelector(".menu-item-content");
 
+  // Toggle menu content when clicking the unlock icon
   unlockIcon.addEventListener("click", (e) => {
     e.stopPropagation();
-    // Add your unlock icon click handler here
+    const isExpanded = examContent.style.display !== "none";
+    examContent.style.display = isExpanded ? "none" : "block";
+    examUnlockerButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
   });
 
+  // Handle main button click (excluding unlock icon)
   examUnlockerButton.addEventListener("click", (e) => {
     if (e.target.closest(".unlock-icon")) {
-      return; // Ignore if clicking on unlock icon
+      return;
     }
-    // Add your exam unlocker button click handler here
+
+    // Update exam configuration
+    const config = {
+      isActive: examUnlockerButton.classList.contains("active"),
+      examInfo: document.querySelector("#examInfoBtn").textContent.trim(),
+    };
+
+    // Call the callback with the configuration
+    if (typeof onExamCallback === "function") {
+      onExamCallback(config);
+    }
   });
 }
 
@@ -762,4 +1193,750 @@ export function displayLessonNumber(number) {
 
   // Update progress text
   progressText.textContent = `You are ${number}% completed`;
+}
+
+// Add this function to handle button states
+export function updateAutoWritingState(state) {
+  const autoWritingButton = document.querySelector(
+    "#autoWritingItem .menu-item-button"
+  );
+  if (!autoWritingButton) return;
+
+  // Remove all states first
+  autoWritingButton.classList.remove("active", "writing");
+
+  switch (state) {
+    case "idle":
+      // Default state, no classes needed
+      break;
+    case "active":
+      autoWritingButton.classList.add("active");
+      break;
+    case "writing":
+      autoWritingButton.classList.add("active", "writing");
+      break;
+  }
+}
+
+// Update the createTypingAnimation function
+export function createTypingAnimation(editor, text, config, onComplete) {
+  // Update button state to writing
+  updateAutoWritingState("writing");
+
+  // Add writing animation class to the editor
+  const editorElement = editor.container.querySelector(".cke_editable");
+  editorElement.classList.add("writing-active");
+
+  // Original typing animation code...
+  const words = text.split(" ");
+  editor.setData("");
+
+  // When typing is complete
+  const originalOnComplete = onComplete;
+  onComplete = () => {
+    editorElement.classList.remove("writing-active");
+    // Keep button in active state but remove writing animation
+    updateAutoWritingState("active");
+    if (originalOnComplete) {
+      originalOnComplete();
+    }
+  };
+
+  // Rest of the existing typing animation code...
+}
+
+// Update the displayExamPanel function with working pagination and scrollable content
+export function displayExamPanel(questions = []) {
+  console.log("Displaying exam panel");
+
+  // Remove existing panel if it exists
+  const existingPanel = document.querySelector("#examInfoPanel");
+  if (existingPanel) {
+    existingPanel.remove();
+  }
+
+  // Update the style to include scrollable content
+  if (!document.querySelector("#exam-panel-style")) {
+    const style = document.createElement("style");
+    style.id = "exam-panel-style";
+    style.textContent = `
+      #examInfoPanel {
+        position: fixed;
+        top: 100px;
+        transform: translate(0, 0); /* Initial position */
+        width: 300px;
+        background: #141517;
+        border-radius: 12px;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        color: white;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        z-index: 999998;
+        display: flex;
+        flex-direction: column;
+        max-height: 80vh;
+      }
+
+      .exam-panel-header {
+        background: #222324;
+        padding: 15px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+      }
+
+      .exam-panel-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: white;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+
+      .exam-questions-container {
+        padding: 15px;
+        overflow-y: auto;
+        flex-grow: 1;
+        height: 400px;
+      }
+
+      /* Scrollbar styling */
+      .exam-questions-container::-webkit-scrollbar {
+        width: 4px;
+      }
+
+      .exam-questions-container::-webkit-scrollbar-track {
+        background: #1a1b1c;
+        border-radius: 4px;
+      }
+
+      .exam-questions-container::-webkit-scrollbar-thumb {
+        background: #2a2b2c;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+      }
+
+      .exam-questions-container::-webkit-scrollbar-thumb:hover {
+        background: #006cff;
+      }
+
+      .exam-question-card {
+        background: #1a1b1c;
+        border-radius: 8px;
+        padding: 12px;
+        margin-bottom: 10px;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        transition: all 0.3s ease;
+      }
+
+      .exam-question-card:hover {
+        border-color: rgba(0, 108, 255, 0.5);
+        box-shadow: 0 0 0 1px rgba(0, 108, 255, 0.2);
+        transform: translateX(-4px);
+      }
+
+      .question-id {
+        color: #006cff;
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+      }
+
+      .question-status {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 4px;
+        display: inline-block;
+        margin-top: 4px;
+      }
+
+      .status-pending {
+        background: rgba(255, 170, 0, 0.2);
+        color: #ffaa00;
+      }
+
+      .status-completed {
+        background: rgba(0, 200, 83, 0.2);
+        color: #00c853;
+      }
+
+      .exam-pagination {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        flex-shrink: 0;
+      }
+
+      .page-info {
+        font-size: 14px;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .page-buttons {
+        display: flex;
+        gap: 8px;
+      }
+
+      .page-button {
+        background: #242526;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        padding: 6px 12px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        min-width: 32px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .page-button:hover:not(:disabled) {
+        background: #2a2b2c;
+        transform: translateY(-1px);
+      }
+
+      .page-button:active:not(:disabled) {
+        transform: translateY(0);
+      }
+
+      .page-button.active {
+        background: #006cff;
+      }
+
+      .page-button:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .question-details {
+        font-size: 13px;
+        color: rgba(255, 255, 255, 0.7);
+        margin-top: 4px;
+      }
+
+      .question-type {
+        display: inline-block;
+        padding: 2px 6px;
+        background: rgba(0, 108, 255, 0.1);
+        color: #006cff;
+        border-radius: 4px;
+        font-size: 11px;
+        margin-right: 8px;
+      }
+
+      .time-remaining {
+        font-size: 12px;
+        color: rgba(255, 255, 255, 0.6);
+        margin-top: 4px;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+      }
+
+      .time-remaining svg {
+        color: #006cff;
+      }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Create the panel
+  const panel = document.createElement("div");
+  panel.id = "examInfoPanel";
+
+  // Initialize state
+  let currentPage = 1;
+  const questionsPerPage = 5;
+  const totalPages = Math.ceil(questions.length / questionsPerPage);
+
+  let isDragging = false;
+  let startX = 0;
+  let startY = 0;
+  let offsetX = 0;
+  let offsetY = 0;
+
+  function handleDragStart(e) {
+    const header = e.target.closest(".exam-panel-header");
+    if (!header) return;
+
+    e.preventDefault();
+    isDragging = true;
+
+    // Get current panel position
+    const transform = window.getComputedStyle(panel).transform;
+    const matrix = new DOMMatrixReadOnly(transform);
+    offsetX = matrix.m41;
+    offsetY = matrix.m42;
+
+    // Get start position
+    startX = e.clientX - offsetX;
+    startY = e.clientY - offsetY;
+
+    // Add temporary event listeners
+    document.addEventListener("mousemove", handleDrag);
+    document.addEventListener("mouseup", handleDragEnd);
+  }
+
+  function handleDrag(e) {
+    if (!isDragging) return;
+
+    e.preventDefault();
+
+    // Calculate new position
+    let newX = e.clientX - startX;
+    let newY = e.clientY - startY;
+
+    // Get viewport and panel dimensions
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+    const panelRect = panel.getBoundingClientRect();
+
+    // Constrain to viewport bounds
+    newX = Math.min(Math.max(newX, 0), viewportWidth - panelRect.width);
+    newY = Math.min(Math.max(newY, 0), viewportHeight - panelRect.height);
+
+    // Update panel position
+    panel.style.transform = `translate(${newX}px, ${newY}px)`;
+  }
+
+  function handleDragEnd() {
+    isDragging = false;
+    document.removeEventListener("mousemove", handleDrag);
+    document.removeEventListener("mouseup", handleDragEnd);
+  }
+
+  // Add main drag event listener
+  panel.addEventListener("mousedown", handleDragStart);
+
+  // Handle window resize to keep panel in bounds
+  function handleResize() {
+    const rect = panel.getBoundingClientRect();
+    const viewportWidth = window.innerWidth;
+    const viewportHeight = window.innerHeight;
+
+    // Get current transform values
+    const transform = window.getComputedStyle(panel).transform;
+    const matrix = new DOMMatrixReadOnly(transform);
+    let currentX = matrix.m41;
+    let currentY = matrix.m42;
+
+    // Adjust position if outside viewport
+    if (rect.right > viewportWidth) {
+      currentX = viewportWidth - rect.width;
+    }
+    if (rect.bottom > viewportHeight) {
+      currentY = viewportHeight - rect.height;
+    }
+
+    panel.style.transform = `translate(${currentX}px, ${currentY}px)`;
+  }
+
+  window.addEventListener("resize", handleResize);
+
+  // Add cleanup function to remove event listeners
+  panel.cleanup = () => {
+    panel.removeEventListener("mousedown", handleDragStart);
+    window.removeEventListener("resize", handleResize);
+  };
+
+  function renderPanel() {
+    const startIdx = (currentPage - 1) * questionsPerPage;
+    const endIdx = startIdx + questionsPerPage;
+    const currentQuestions = questions.slice(startIdx, endIdx);
+
+    // Store the old transform value
+    const oldTransform = panel.style.transform;
+
+    panel.innerHTML = `
+      <div class="exam-panel-header">
+        <div class="exam-panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+            <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+          </svg>
+          Exam Questions (${questions.length})
+        </div>
+      </div>
+      <div class="exam-questions-container">
+        ${currentQuestions
+          .map(
+            (q) => `
+          <div class="exam-question-card">
+            <div class="question-id">${q}</div>
+            <div class="question-details">
+              <span class="question-type">Assessment Question</span>
+            </div>
+            <div class="question-status status-pending">
+              Pending
+            </div>
+            <div class="time-remaining">
+              <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <circle cx="12" cy="12" r="10"></circle>
+                <polyline points="12 6 12 12 16 14"></polyline>
+              </svg>
+              Time remaining
+            </div>
+          </div>
+        `
+          )
+          .join("")}
+      </div>
+      <div class="exam-pagination">
+        <div class="page-info">
+          ${totalPages ? `Page ${currentPage} of ${totalPages}` : ""}
+        </div>
+        <div class="page-buttons">
+          <button class="page-button" ${
+            !totalPages || currentPage === 1 ? "disabled" : ""
+          } id="prevPage">
+            ←
+          </button>
+          <button class="page-button" ${
+            !totalPages || currentPage === totalPages ? "disabled" : ""
+          } id="nextPage">
+            →
+          </button>
+        </div>
+      </div>
+    `;
+
+    // Restore the transform value
+    panel.style.transform = oldTransform;
+
+    // Add pagination button listeners
+    const prevButton = panel.querySelector("#prevPage");
+    const nextButton = panel.querySelector("#nextPage");
+
+    if (prevButton) {
+      prevButton.addEventListener("click", () => {
+        if (currentPage > 1) {
+          currentPage--;
+          renderPanel();
+        }
+      });
+    }
+
+    if (nextButton) {
+      nextButton.addEventListener("click", () => {
+        if (currentPage < totalPages) {
+          currentPage++;
+          renderPanel();
+        }
+      });
+    }
+  }
+
+  // Initial render
+  renderPanel();
+  document.body.appendChild(panel);
+
+  return panel;
+}
+
+const setExampleQuestions = (questions) => {
+  exampleQuestions = questions;
+  // Update the questions array
+  exampleQuestions = questions;
+
+  // Re-render the exam panel if it exists
+  const existingPanel = document.querySelector("#examInfoPanel");
+  if (existingPanel) {
+    displayExamPanel(questions);
+  }
+};
+
+export { setExampleQuestions };
+
+// Add this function to create and handle the auto advance modal
+async function createAutoAdvanceModal(courses = []) {
+  console.log("createAutoAdvanceModal");
+  // Remove all elements with id autoAdvanceModal
+  const autoAdvanceModals = document.querySelectorAll("#autoAdvanceModal");
+  autoAdvanceModals.forEach((modal) => modal.remove());
+
+  console.log("courses", courses);
+  const modalHtml = `
+    <div id="autoAdvanceModal" class="modal">
+      <div class="modal-content">
+        <div class="container1">
+          <h1 style="font-size: 32px; margin-top: 30px;">Get <span class="title">school</span> done now</h1>
+          <p class="info1">Select a class to get started with Revolt</p>
+          <div class="typing-dropdown" style="margin-top: 10px;">
+            <button class="dropdown-btn" id="placeholderBtn" style="height: 40px;">Select a class</button>
+            <div class="dropdown-content1">
+              ${courses
+                .map(
+                  (course) =>
+                    `<div class="dropdown-option" data-value="${course.id}">
+                      <div style="display: flex; flex-direction: column; gap: 4px;">
+                        <div style="font-size: 18px; font-weight: 500; color: #fff; margin-bottom: 4px;">${
+                          course.subject
+                        }</div>
+                        <div style="display: flex; flex-direction: row; justify-content: space-between; font-size: 14px; font-weight: 350; color: #fff;">
+                          <div>${course.name}</div>
+                          <div>
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              <circle cx="12" cy="12" r="11" stroke="white" stroke-width="2"/>
+                              <path d="M10 7L16 12L10 17" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                          </div>
+                        </div>
+                        <div class="progress-bar" style="width: 100%; height: 3px; margin-top: 4px;">
+                          <div style="width: ${
+                            course.progress
+                              ? course.progress.percentComplete
+                              : 0
+                          }%; height: 100%; background: #006CFF; border-radius: 10px; transition: width 0.3s ease;"></div>
+                        </div>
+                        ${
+                          course.progress
+                            ? `<div style="font-size: 12px; color: #9b9d9f;">You are ${course.progress.percentComplete}% complete and Ahead</div>`
+                            : ""
+                        }
+                      </div>
+                    </div>`
+                )
+                .join("")}
+            </div>
+          </div>
+          <p class="info" id="cancelModalBtn" style="cursor: pointer;">Cancel</p>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // Update the modal styles to include animation
+  const modalStyle = `
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.7);
+      font-family: Arial, sans-serif;
+      opacity: 0;
+      transition: opacity 0.5s ease-in-out;
+    }
+
+    .modal.show {
+      opacity: 1;
+      z-index: 1000000;
+    }
+
+    .modal-content {
+      position: absolute;
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%) scale(0.7);
+      width: 540px;
+      border-radius: 12px;
+      background: #12141a;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    }
+
+    .modal.show .modal-content {
+      transform: translate(-50%, -50%) scale(1);
+      opacity: 1;
+    }
+
+    @keyframes modalPop {
+      0% {
+        transform: translate(-50%, -50%) scale(0.7);
+        opacity: 0;
+      }
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+        opacity: 1;
+      }
+    }
+
+
+    .container1 {
+      text-align: center;
+      padding: 30px;
+      border-radius: 12px;
+      height: 300px;
+      transition: height 0.5s ease-in-out;
+      margin-bottom: 30px;
+      overflow-y: hidden;
+      scrollbar-width: none;
+    }
+
+    .h-400 {
+      height: 600px !important;
+      overflow-y: scroll;
+    }
+
+    .dropdown-content1 {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      width: 100%;
+      height: 0px;
+      background: #242526;
+      border-radius: 4px;
+      z-index: 1;
+      margin-top: 4px;
+      overflow-y: scroll;
+      scrollbar-width: none;
+      transition: height 0.4s ease-in-out;
+    }
+
+    h1 {
+      font-size: 24px;
+      font-weight: bold;
+      color: white;
+      margin: 0;
+    }
+
+    .emoji {
+      font-size: 24px;
+      vertical-align: middle;
+    }
+
+    .dropdown {
+      background: #23252b;
+      color: white;
+      border: none;
+      padding: 10px;
+      width: 100%;
+      border-radius: 6px;
+      font-size: 16px;
+      margin-top: 5px;
+    }
+
+    .info {
+      margin-top: 50px;
+      font-size: 14px;
+      background: rgba(255, 255, 255, 0.1);
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 8px;
+      color: white;
+    }
+
+    .info1 {
+      display: flex !important;
+      justify-content: flex-start;
+      margin-top: 40px;
+      margin-bottom: 5px !important;
+      font-size: 14px;
+      color: white;
+    }
+
+    .title {
+      margin-bottom: 0 !important;
+      color: #006cff;
+    }
+  `;
+
+  // Add styles to document
+  if (!document.querySelector("#autoAdvanceModalStyle")) {
+    const style = document.createElement("style");
+    style.id = "autoAdvanceModalStyle";
+    style.textContent = modalStyle;
+    document.head.appendChild(style);
+  }
+
+  // Add modal to document
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+  // Get modal elements
+  const modal = document.getElementById("autoAdvanceModal");
+  // Add dropdown functionality
+  const dropdown = modal.querySelector(".typing-dropdown");
+  console.log("dropdowns", dropdown);
+  const btn = dropdown.querySelector(".dropdown-btn");
+  const options = dropdown.querySelectorAll(".dropdown-option");
+  const container1 = modal.querySelector(".container1");
+
+  btn.addEventListener("click", (e) => {
+    e.stopPropagation();
+    // Increase container1 height to 400px
+    container1.classList.toggle("h-400");
+    dropdown.classList.toggle("active");
+  });
+
+  options.forEach((option) => {
+    option.addEventListener("click", (e) => {
+      e.stopPropagation();
+      container1.classList.remove("h-400");
+      const selectedValue = option.getAttribute("data-value");
+
+      // Redirect to current path + course id
+      const currentPath = window.location.href;
+      console.log(
+        "path",
+        `${currentPath}enrollment/${selectedValue}/coursemap#`
+      );
+      window.location.href = `${currentPath}enrollment/${selectedValue}/coursemap#`;
+      // Show loading spinner overlaid on original content
+      const dropdownContent = dropdown.querySelector(".dropdown-content1");
+      const spinnerHtml = `
+        <div style="position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.7); display: flex; justify-content: center; align-items: center; z-index: 100;">
+          <div class="loading-spinner" style="width: 30px; height: 30px; border: 3px solid rgba(255,255,255,0.1); border-radius: 50%; border-top-color: #006cff; animation: spin 1s ease-in-out infinite;"></div>
+        </div>
+      `;
+      dropdownContent.style.position = "relative";
+      dropdownContent.insertAdjacentHTML("beforeend", spinnerHtml);
+    });
+  });
+
+  // Close modal when clicking outside
+  window.addEventListener("click", (e) => {
+    const modalContent = modal.querySelector(".modal-content");
+    if (
+      !document.getElementById("autoAdvanceItem").contains(e.target) &&
+      e.target !== modalContent
+    ) {
+      hideModal();
+    }
+  });
+
+  const cancelModalBtn = document.getElementById("cancelModalBtn");
+  cancelModalBtn.addEventListener("click", () => {
+    hideModal();
+  });
+
+  modal.addEventListener("click", (e) => {
+    e.stopPropagation();
+    console.log("modal clicked");
+    dropdown.classList.remove("active");
+    container1.classList.remove("h-400");
+    if (!modal.querySelector(".modal-content").contains(e.target)) {
+      hideModal();
+    }
+  });
+
+  // Show modal with animation
+  function showModal() {
+    modal.style.display = "block";
+    // Trigger reflow
+    modal.offsetHeight;
+    modal.classList.add("show");
+  }
+
+  // Hide modal with animation
+  function hideModal() {
+    modal.classList.remove("show");
+    setTimeout(() => {
+      modal.style.display = "none";
+    }, 300); // Match the transition duration
+  }
+
+  // Update the display logic when opening the modal
+  return {
+    show: showModal,
+    hide: hideModal,
+    element: modal,
+  };
 }
