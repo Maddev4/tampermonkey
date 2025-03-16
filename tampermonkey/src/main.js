@@ -1008,3 +1008,9 @@ export function getStageFrame() {
     ? document.getElementById("stageFrame")
     : null;
 }
+
+export function getIFramePreview() {
+  return document.getElementById(".iFramePreview")
+    ? document.getElementById(".iFramePreview")
+    : null;
+}

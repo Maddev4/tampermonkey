@@ -1,4 +1,4 @@
-import { getCourses, getStageFrame } from "./main";
+import { getCourses, getStageFrame, getIFramePreview } from "./main";
 
 let exampleQuestions = [];
 
@@ -128,907 +128,1024 @@ export function displayHumanElement(text, score = null) {
  * @param {Function} onExamCallback - Callback function for exam automation
  */
 export function initDraggableMenu(onStartCallback, onExamCallback) {
-  // 1. CREATE THE MENU CONTAINER
-  const menu = document.createElement("div");
-  menu.id = "autoWritingMenu";
-  menu.innerHTML = `
-    <div class="menu-header">
-      <div class="menu-title">REVOLT | BETA</div>
-    </div>
-    <div class="menu-items">
-      <div class="menu-item" id="autoAdvanceItem">
-        <button class="menu-item-button">
-          <div class="button-content">
-            <div class="rocket-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
-                <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
-              </svg>
-            </div>
-            <span class="button-text">Auto Advance</span>
-          </div>
-        </button>
+  try {
+    // Check if document is ready
+    if (!document.body) {
+      console.error("Document body not ready");
+      // Wait for DOM to be ready
+      document.addEventListener("DOMContentLoaded", () => {
+        initDraggableMenu(onStartCallback, onExamCallback);
+      });
+      return;
+    }
+
+    // Check for existing menu to prevent duplicates
+    const existingMenu = document.getElementById("autoWritingMenu");
+    if (existingMenu) {
+      existingMenu.remove();
+    }
+
+    // 1. CREATE THE MENU CONTAINER
+    const menu = document.createElement("div");
+    menu.id = "autoWritingMenu";
+    menu.innerHTML = `
+      <div class="menu-header">
+        <div class="menu-title">REVOLT | BETA</div>
       </div>
-      <div class="menu-item" id="autoWritingItem">
-        <button class="menu-item-button">
-          <div class="button-content">
-            <div class="settings-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
-              </svg>
-            </div>
-            <span class="button-text">Auto writing</span>
-          </div>
-        </button>
-        <div class="menu-item-content" style="display: none;">
-          <div class="menu-body">
-            <div class="menu-row">
-              <label>Submit delay:</label>
-              <div class="input-group" style="width: 100%;">
-                <div class="input-with-unit">
-                  <input type="number" min="0" step="1" value="0" id="submitDelay1">
-                  <span class="input-unit">sec</span>
-                </div>
-                <span>-</span>
-                <div class="input-with-unit">
-                  <input type="number" min="0" step="1" value="0" id="submitDelay2">
-                  <span class="input-unit">sec</span>
-                </div>
+      <div class="menu-items">
+      <div class="menu-item" id="autoVideoItem">
+          <button class="menu-item-button">
+            <div class="button-content">
+              <div class="video-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="23 7 16 12 23 17 23 7"></polygon>
+                  <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+                </svg>
               </div>
+              <span class="button-text">Auto Video</span>
             </div>
-            <div class="menu-row">
-              <label>Answer delay:</label>
-              <div class="typing-dropdown answer-delay-dropdown" style="width: 100% !important;">
-                <button class="dropdown-btn" id="answerDelayBtn">None</button>
-                <div class="dropdown-content">
-                  <div class="dropdown-option" data-value="none">None</div>
-                  <div class="dropdown-option" data-value="custom">Custom</div>
-                </div>
+          </button>
+        </div>
+        <div class="menu-item" id="autoAdvanceItem">
+          <button class="menu-item-button">
+            <div class="button-content">
+              <div class="rocket-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09z"></path>
+                  <path d="M12 15l-3-3a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.35 22.35 0 0 1-4 2z"></path>
+                </svg>
               </div>
-              <div class="input-with-unit custom-delay-input" style="display: none; width: 60px;">
-                <input type="number" min="0" step="1" value="0" id="answerDelay" style="width: 60px !important;">
-                <span class="input-unit">wpm</span>
-              </div>
+              <span class="button-text">Auto Advance</span>
             </div>
-            <div class="menu-row">
-              <label>Typing Style:</label>
-              <div class="typing-dropdown">
-                <button class="dropdown-btn" id="typingStyleBtn">None</button>
-                <div class="dropdown-content">
-                  <div class="dropdown-option" data-value="default">None</div>
-                  <div class="dropdown-option" data-value="level1">Level 1</div>
-                  <div class="dropdown-option" data-value="level2">Level 2</div>
-                  <div class="dropdown-option" data-value="level3">Level 3</div>
-                </div>
+          </button>
+        </div>
+        <div class="menu-item" id="autoWritingItem">
+          <button class="menu-item-button">
+            <div class="button-content">
+              <div class="settings-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="12" cy="12" r="3"></circle>
+                  <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                </svg>
               </div>
+              <span class="button-text">Auto writing</span>
             </div>
-            <div class="menu-row">
-              <label>Placeholder:</label>
-              <div class="typing-dropdown">
-                <button class="dropdown-btn" id="placeholderBtn">None</button>
-                <div class="dropdown-content">
-                  <div class="dropdown-option" data-value="default">None</div>
-                  <div class="dropdown-option" data-value="enabled">Enabled</div>
-                  <div class="dropdown-option" data-value="disabled">Disabled</div>
+          </button>
+          <div class="menu-item-content" style="display: none;">
+            <div class="menu-body">
+              <div class="menu-row">
+                <label>Submit delay:</label>
+                <div class="input-group" style="width: 100%;">
+                  <div class="input-with-unit">
+                    <input type="number" min="0" step="1" value="0" id="submitDelay1">
+                    <span class="input-unit">sec</span>
+                  </div>
+                  <span>-</span>
+                  <div class="input-with-unit">
+                    <input type="number" min="0" step="1" value="0" id="submitDelay2">
+                    <span class="input-unit">sec</span>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div class="custom-placeholder-input" style="display: none;">
-              <textarea 
-                id="placeholderText" 
-                placeholder="Enter custom placeholder text..."
-                rows="3"
-              >This topic has many sides to consider, each offering unique insights required to understand.</textarea>
+              <div class="menu-row">
+                <label>Answer delay:</label>
+                <div class="typing-dropdown answer-delay-dropdown" style="width: 100% !important;">
+                  <button class="dropdown-btn" id="answerDelayBtn">None</button>
+                  <div class="dropdown-content">
+                    <div class="dropdown-option" data-value="none">None</div>
+                    <div class="dropdown-option" data-value="custom">Custom</div>
+                  </div>
+                </div>
+                <div class="input-with-unit custom-delay-input" style="display: none; width: 60px;">
+                  <input type="number" min="0" step="1" value="0" id="answerDelay" style="width: 60px !important;">
+                  <span class="input-unit">wpm</span>
+                </div>
+              </div>
+              <div class="menu-row">
+                <label>Typing Style:</label>
+                <div class="typing-dropdown">
+                  <button class="dropdown-btn" id="typingStyleBtn">None</button>
+                  <div class="dropdown-content">
+                    <div class="dropdown-option" data-value="default">None</div>
+                    <div class="dropdown-option" data-value="level1">Level 1</div>
+                    <div class="dropdown-option" data-value="level2">Level 2</div>
+                    <div class="dropdown-option" data-value="level3">Level 3</div>
+                  </div>
+                </div>
+              </div>
+              <div class="menu-row">
+                <label>Placeholder:</label>
+                <div class="typing-dropdown">
+                  <button class="dropdown-btn" id="placeholderBtn">None</button>
+                  <div class="dropdown-content">
+                    <div class="dropdown-option" data-value="default">None</div>
+                    <div class="dropdown-option" data-value="enabled">Enabled</div>
+                    <div class="dropdown-option" data-value="disabled">Disabled</div>
+                  </div>
+                </div>
+              </div>
+              <div class="custom-placeholder-input" style="display: none;">
+                <textarea 
+                  id="placeholderText" 
+                  placeholder="Enter custom placeholder text..."
+                  rows="3"
+                >This topic has many sides to consider, each offering unique insights required to understand.</textarea>
+              </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="menu-item" id="examUnlockerItem">
-        <button class="menu-item-button">
-          <div class="button-content">
-            <div class="unlock-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
-                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
-              </svg>
+        <div class="menu-item" id="examUnlockerItem">
+          <button class="menu-item-button">
+            <div class="button-content">
+              <div class="unlock-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                  <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+                </svg>
+              </div>
+              <span class="button-text">Auto Exam</span>
             </div>
-            <span class="button-text">Auto Exam</span>
-          </div>
-        </button>
-        <div class="menu-item-content" style="display: none;">
-          <div class="menu-body">
-            <div class="menu-row">
-              <label>Exam Info:</label>
-              <div class="typing-dropdown">
-                <button class="dropdown-btn" id="examInfoBtn">Disabled</button>
-                <div class="dropdown-content">
-                  <div class="dropdown-option" data-value="enabled">Enabled</div>
-                  <div class="dropdown-option" data-value="disabled">Disabled</div>
+          </button>
+          <div class="menu-item-content" style="display: none;">
+            <div class="menu-body">
+              <div class="menu-row">
+                <label>Exam Info:</label>
+                <div class="typing-dropdown">
+                  <button class="dropdown-btn" id="examInfoBtn">Disabled</button>
+                  <div class="dropdown-content">
+                    <div class="dropdown-option" data-value="enabled">Enabled</div>
+                    <div class="dropdown-option" data-value="disabled">Disabled</div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
-      <div class="menu-item" id="autoVocabItem">
-        <button class="menu-item-button">
-          <div class="button-content">
-            <div class="wordbook-icon">
-              <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-              </svg>
+        <div class="menu-item" id="autoVocabItem">
+          <button class="menu-item-button">
+            <div class="button-content">
+              <div class="wordbook-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+              </div>
+              <span class="button-text">Auto Vocabulary</span>
             </div>
-            <span class="button-text">Auto Vocabulary</span>
-          </div>
-        </button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(menu);
-
-  // 2. ADD STYLES
-  const style = document.createElement("style");
-  style.textContent = `
-    #autoWritingMenu {
-      position: fixed;
-      top: 100px;
-      left: 100px;
-      width: 320px;
-      background: #141517;
-      border-radius: 12px;
-      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-      z-index: 999999;
-      cursor: default;
-      color: white;
-      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-    }
-
-    .menu-header {
-      background: #222324;
-      padding: 15px 20px;
-      user-select: none;
-      border-radius: 12px 12px 0 0;
-      cursor: grab;
-    }
-
-    .menu-title {
-      color: white;
-      font-size: 24px;
-      font-weight: 800;
-    }
-
-    .menu-items {
-      padding: 10px;
-    }
-
-    .menu-item {
-      margin-bottom: 8px;
-    }
-
-    .menu-item-button {
-      width: 100%;
-      padding: 10px 15px;
-      background: #242526;
-      border: none;
-      border-radius: 6px;
-      color: white;
-      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .menu-item-button:hover {
-      background: #2a2b2c;
-    }
-
-    .menu-item-button.active {
-      background: #006cff;
-      animation: pulse 2s infinite;
-    }
-
-    .menu-item-button.writing {
-      background: #006cff;
-      animation: writing-pulse 2s infinite;
-    }
-
-    .menu-item-button.writing::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: -100%;
-      width: 100%;
-      height: 100%;
-      background: linear-gradient(
-        90deg,
-        transparent,
-        rgba(255, 255, 255, 0.2),
-        transparent
-      );
-      animation: wave 2s linear infinite;
-    }
-
-    @keyframes pulse {
-      0% {
-        box-shadow: 0 0 0 0 rgba(0, 108, 255, 0.4);
-      }
-      70% {
-        box-shadow: 0 0 0 10px rgba(0, 108, 255, 0);
-      }
-      100% {
-        box-shadow: 0 0 0 0 rgba(0, 108, 255, 0);
-      }
-    }
-
-    @keyframes writing-pulse {
-      0% {
-        box-shadow: 0 0 5px rgba(0, 108, 255, 0.5),
-                    0 0 10px rgba(0, 108, 255, 0.3);
-      }
-      50% {
-        box-shadow: 0 0 10px rgba(0, 108, 255, 0.7),
-                    0 0 20px rgba(0, 108, 255, 0.5);
-      }
-      100% {
-        box-shadow: 0 0 5px rgba(0, 108, 255, 0.5),
-                    0 0 10px rgba(0, 108, 255, 0.3);
-      }
-    }
-
-    @keyframes wave {
-      0% {
-        left: -100%;
-      }
-      100% {
-        left: 100%;
-      }
-    }
-
-    .menu-body {
-      padding: 15px;
-      background: #1a1b1c;
-      border-radius: 6px;
-      margin-top: 8px;
-    }
-
-    .menu-row {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      margin-bottom: 12px;
-      height: 32px;
-    }
-
-    .menu-row label {
-      min-width: 100px;
-      color: white;
-      font-size: 15px;
-      font-weight: 600;
-      opacity: 0.9;
-    }
-
-    .input-group {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .input-with-unit {
-      position: relative;
-      width: 60px;
-    }
-
-    input[type="number"] {
-      width: 100%;
-      height: 28px;
-      padding: 0 25px 0 8px;
-      background: #242526;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      -moz-appearance: textfield;
-    }
-
-    input[type="number"]::-webkit-outer-spin-button,
-    input[type="number"]::-webkit-inner-spin-button {
-      -webkit-appearance: none;
-      margin: 0;
-    }
-
-    .input-unit {
-      position: absolute;
-      right: 8px;
-      top: 50%;
-      transform: translateY(-50%);
-      color: rgba(255, 255, 255, 0.6);
-      font-size: 10px;
-      pointer-events: none;
-    }
-
-    .typing-dropdown {
-      position: relative;
-      width: 100%;
-    }
-
-    .dropdown-btn {
-      width: 100%;
-      height: 28px;
-      padding: 0 10px;
-      background: #242526;
-      border: none;
-      border-radius: 4px;
-      color: white;
-      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-      font-size: 15px;
-      font-weight: 600;
-      text-align: left;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-    }
-
-    .dropdown-btn::after {
-      content: '▼';
-      font-size: 10px;
-      opacity: 0.7;
-    }
-
-    .dropdown-content {
-      position: absolute;
-      top: 100%;
-      left: 0;
-      width: 100%;
-      background: #242526;
-      border-radius: 4px;
-      z-index: 1;
-      margin-top: 4px;
-      display: none;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-                  0 0 0 1px rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      overflow: hidden;
-    }
-
-    .dropdown-option {
-      text-align: left;
-      padding: 8px 10px;
-      color: white;
-      font-size: 15px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-    }
-
-    .dropdown-option:last-child {
-      border-bottom: none;
-    }
-
-    .dropdown-option:hover {
-      background: #2a2b2c;
-      padding-left: 15px;
-    }
-
-    .typing-dropdown.active .dropdown-content {
-      display: block;
-    }
-
-    .typing-dropdown.active .dropdown-content1 {
-      height: 380px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
-                  0 0 0 1px rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-    }
-
-    .custom-delay-input {
-      transition: all 0.3s ease;
-    }
-
-    .button-content {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      width: 100%;
-    }
-
-    .settings-icon,
-    .unlock-icon,
-    .rocket-icon {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      border-radius: 4px;
-      transition: all 0.2s ease;
-      color: rgba(255, 255, 255, 0.7);
-    }
-
-    .settings-icon:hover,
-    .unlock-icon:hover,
-    .rocket-icon:hover {
-      background: rgba(255, 255, 255, 0.1);
-      color: white;
-    }
-
-    .button-text {
-      flex: 1;
-    }
-
-    /* Editor Writing Animation */
-    .cke_editable.writing-active {
-      position: relative;
-      border: 1px solid rgba(0, 108, 255, 0.3) !important;
-      box-shadow: 0 0 10px rgba(0, 108, 255, 0.2) !important;
-    }
-
-    .cke_editable.writing-active::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background: linear-gradient(90deg, #006cff, transparent);
-      animation: writing 2s ease-out infinite;
-    }
-
-    @keyframes writing {
-      0% {
-        width: 0;
-        opacity: 1;
-      }
-      50% {
-        width: 100%;
-        opacity: 1;
-      }
-      100% {
-        width: 100%;
-        opacity: 0;
-      }
-    }
-
-    .custom-placeholder-input {
-      margin-top: 8px;
-      transition: all 0.3s ease;
-    }
-
-    .custom-placeholder-input textarea {
-      width: 100%;
-      padding: 8px 12px;
-      background: #242526;
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      border-radius: 4px;
-      color: white;
-      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      resize: vertical;
-      min-height: 80px;
-      line-height: 1.5;
-    }
-
-    .custom-placeholder-input textarea:focus {
-      outline: none;
-      border-color: rgba(0, 108, 255, 0.5);
-      box-shadow: 0 0 0 2px rgba(0, 108, 255, 0.2);
-    }
-
-    #examUnlockerItem .menu-item-button.active {
-      background: #006cff;
-      animation: pulse 2s infinite;
-    }
-
-    #examUnlockerItem .menu-body {
-      padding: 15px;
-      background: #1a1b1c;
-      border-radius: 6px;
-      margin-top: 8px;
-    }
-
-    .exam-panel-header {
-      cursor: grab;
-      user-select: none;
-      border-radius: 12px 12px 0 0;
-    }
-
-    .exam-panel-header:active {
-      cursor: grabbing;
-    }
-
-    .loading-overlay {
-      display: none;
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0, 0, 0, 0.7);
-      z-index: 1000000;
-      opacity: 0;
-      transition: opacity 0.3s ease;
-    }
-
-    .loading-overlay.show {
-      opacity: 1;
-    }
-
-    .loading-spinner-container {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      text-align: center;
-    }
-
-    .loading-spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-radius: 50%;
-      border-top-color: #006cff;
-      animation: spin 1s ease-in-out infinite;
-    }
-
-    .loading-text {
-      color: white;
-      margin-top: 16px;
-      font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-  `;
-  document.head.appendChild(style);
-
-  // 3. ADD EVENT LISTENERS
-  const autoWritingItem = document.getElementById("autoWritingItem");
-  const autoWritingButton = autoWritingItem.querySelector(".menu-item-button");
-  const settingsIcon = autoWritingItem.querySelector(".settings-icon");
-  const autoWritingContent =
-    autoWritingItem.querySelector(".menu-item-content");
-
-  // Toggle menu content
-  settingsIcon.addEventListener("click", () => {
-    const isExpanded = autoWritingContent.style.display !== "none";
-    autoWritingContent.style.display = isExpanded ? "none" : "block";
-    autoWritingButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
-  });
-
-  // Button click handler (excluding settings icon) - start auto writing
-  autoWritingButton.addEventListener("click", (e) => {
-    if (e.target.closest(".settings-icon")) {
-      return;
-    }
-
-    const submitDelay1 = document.querySelector("#submitDelay1");
-    const submitDelay2 = document.querySelector("#submitDelay2");
-    const answerDelay = document.querySelector("#answerDelay");
-    const answerDelayBtn = document.querySelector("#answerDelayBtn");
-    const typingStyleBtn = document.querySelector("#typingStyleBtn");
-
-    // Validate configuration
-    if (
-      (submitDelay1.value === "0" && submitDelay2.value === "0") ||
-      parseInt(submitDelay1.value) > parseInt(submitDelay2.value)
-    ) {
-      alert("Error at submit delay");
-      return;
-    }
-
-    if (
-      answerDelay.value === "0" &&
-      answerDelayBtn.textContent.trim() === "Custom"
-    ) {
-      alert("Error at answer delay");
-      return;
-    }
-
-    // Update button state
-    const isActive = !autoWritingButton.classList.contains("active");
-    updateAutoWritingState(isActive ? "active" : "idle");
-
-    // Collect configuration data
-    const config = {
-      isActive: autoWritingButton.classList.contains("active"),
-      submitDelay: {
-        min: parseInt(submitDelay1.value) || 0,
-        max: parseInt(submitDelay2.value) || 0,
-      },
-      answerDelay: parseInt(answerDelay.value) || 0,
-      typingStyle: typingStyleBtn.textContent.trim(),
-      placeholder: document.querySelector("#placeholderBtn").textContent.trim(),
-      placeholderText:
-        document.querySelector("#placeholderBtn").textContent.trim() ===
-        "Enabled"
-          ? document.querySelector("#placeholderText").value.trim()
-          : "",
-    };
-
-    // Call the callback with the configuration
-    if (typeof onStartCallback === "function") {
-      onStartCallback(config);
-    }
-  });
-
-  // Add dropdown functionality
-  const dropdowns = menu.querySelectorAll(".typing-dropdown");
-  dropdowns.forEach((dropdown) => {
-    const btn = dropdown.querySelector(".dropdown-btn");
-    const options = dropdown.querySelectorAll(".dropdown-option");
-
-    btn.addEventListener("click", (e) => {
-      e.stopPropagation();
-      dropdowns.forEach((d) => {
-        if (d !== dropdown) d.classList.remove("active");
-      });
-      dropdown.classList.toggle("active");
-    });
-
-    options.forEach((option) => {
-      option.addEventListener("click", (e) => {
-        e.stopPropagation();
-        const selectedValue = option.getAttribute("data-value");
-        btn.textContent = option.textContent;
-        dropdown.classList.remove("active");
-
-        if (dropdown.classList.contains("answer-delay-dropdown")) {
-          const customDelayInput = menu.querySelector(".custom-delay-input");
-          if (selectedValue === "custom") {
-            customDelayInput.style.display = "block";
-          } else {
-            customDelayInput.style.display = "none";
-            document.querySelector("#answerDelay").value = "0";
-          }
-        }
-
-        // Add this block to handle placeholder dropdown
-        if (btn.id === "placeholderBtn") {
-          const customPlaceholderInput = menu.querySelector(
-            ".custom-placeholder-input"
-          );
-          if (option.textContent === "Enabled") {
-            customPlaceholderInput.style.display = "block";
-          } else {
-            customPlaceholderInput.style.display = "none";
-          }
-        }
-
-        // Add this block to handle exam info dropdown
-        if (btn.id === "examInfoBtn") {
-          if (option.textContent === "Enabled") {
-            // Example questions array - replace with actual API data
-            displayExamPanel(exampleQuestions);
-          } else {
-            const panel = document.querySelector("#examInfoPanel");
-            if (panel) panel.remove();
-          }
-
-          // Update exam configuration
-          const config = {
-            isActive: examUnlockerButton.classList.contains("active"),
-            examInfo: option.textContent,
-          };
-
-          // Call the callback with the configuration
-          if (typeof onExamCallback === "function") {
-            onExamCallback(config);
-          }
-        }
-      });
-    });
-  });
-
-  // Close dropdowns when clicking outside
-  document.addEventListener("click", () => {
-    dropdowns.forEach((dropdown) => dropdown.classList.remove("active"));
-  });
-
-  // Update the Auto Advance button click handler
-  const autoAdvanceItem = document.getElementById("autoAdvanceItem");
-  const autoAdvanceButton = autoAdvanceItem?.querySelector(".menu-item-button");
-
-  autoAdvanceButton.addEventListener("click", async (e) => {
-    // Create and show loading overlay
-    const loadingOverlay = document.createElement("div");
-    loadingOverlay.className = "loading-overlay";
-    loadingOverlay.innerHTML = `
-      <div class="loading-spinner-container">
-        <div class="loading-spinner"></div>
+          </button>
+        </div>
       </div>
     `;
-    document.body.appendChild(loadingOverlay);
 
-    // Show loading overlay with animation
-    loadingOverlay.style.display = "block";
-    loadingOverlay.offsetHeight; // Force reflow
-    loadingOverlay.classList.add("show");
-
-    try {
-      // Fetch courses
-      // Add a small delay to ensure loading animation is visible
-      const courses = await getCourses();
-
-      // Hide loading overlay
-      loadingOverlay.classList.remove("show");
-      setTimeout(() => {
-        loadingOverlay.remove();
-      }, 300);
-
-      // Create and show modal
-      const modal = await createAutoAdvanceModal(courses);
-      if (modal.show) {
-        modal.show();
-      } else {
-        modal.classList.add("show");
-        modal.style.display = "block";
+    // Create and append styles first
+    const style = document.createElement("style");
+    style.id = "autoWritingMenuStyle"; // Add ID to prevent duplicate styles
+    style.textContent = `
+      #autoWritingMenu {
+        position: fixed;
+        top: 100px;
+        left: 100px;
+        width: 320px;
+        background: #141517;
+        border-radius: 12px;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        z-index: 999999;
+        cursor: default;
+        color: white;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
       }
-    } catch (error) {
-      console.error("Error loading courses:", error);
 
-      // Hide loading overlay and show error message
-      loadingOverlay.classList.remove("show");
-      setTimeout(() => {
-        loadingOverlay.remove();
-        alert("Failed to load courses. Please try again.");
-      }, 300);
-    }
-  });
-
-  // Update the Auto Vocabulary button click handler
-  const autoVocabItem = document.getElementById("autoVocabItem");
-  const autoVocabButton = autoVocabItem?.querySelector(".menu-item-button");
-
-  const stageFrame = getStageFrame();
-  let nextWord = true;
-  autoVocabButton.addEventListener("click", async (e) => {
-    // Add wave animation effect
-
-    try {
-      if (!stageFrame?.contentWindow) {
-        alert("Content Window not found");
-        return;
+      .menu-header {
+        background: #222324;
+        padding: 15px 20px;
+        user-select: none;
+        border-radius: 12px 12px 0 0;
+        cursor: grab;
       }
-      autoVocabButton.classList.add("active", "writing");
-      while (nextWord) {
-        const contentWindow = stageFrame?.contentWindow;
-        let { viewModel, API, ActivityKeys, initialData } = contentWindow;
-        const word = viewModel?.currentWord();
-        const wordText = word?.word();
-        console.log("Current Word:", wordText);
-        const wordTextbox =
-          stageFrame?.contentDocument?.querySelector(".word-textbox");
-        if (wordTextbox) {
-          wordTextbox.value = wordText;
 
-          const keyupEvent = new Event("keyup");
-          wordTextbox.dispatchEvent(keyupEvent);
+      .menu-title {
+        color: white;
+        font-size: 24px;
+        font-weight: 800;
+      }
 
-          const url =
-            API.E2020.addresses.ContentEngineViewersPath +
-            "Vocab/UpdateAttempt?attemptKey=" +
-            ActivityKeys.resultKey +
-            "&completedWordKey=" +
-            word.key +
-            "&enrollmentKey=" +
-            ActivityKeys.enrollmentKey +
-            "&version=" +
-            ActivityKeys.version;
+      .menu-items {
+        padding: 10px;
+      }
 
-          const response = await fetch(url, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json; charset=utf-8",
-            },
-          });
-          const result = await response.json();
-          console.log("Result:", result);
+      .menu-item {
+        margin-bottom: 8px;
+      }
 
-          viewModel.currentWord().complete(true);
-          console.log("Words:", viewModel.words());
-          const currentWordIndex = viewModel.words().indexOf(word);
-          nextWord = viewModel.words()[currentWordIndex + 1];
-          if (nextWord) {
-            console.log("Next Word Rank:", nextWord.rank());
-            viewModel.nextAvailableWord(nextWord);
-            viewModel.currentWord().nextButton().state(true);
-            viewModel.selectWord(nextWord.rank());
-          }
+      .menu-item-button {
+        width: 100%;
+        padding: 10px 15px;
+        background: #242526;
+        border: none;
+        border-radius: 6px;
+        color: white;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        position: relative;
+        overflow: hidden;
+      }
 
-          console.log("Complete:", viewModel.complete(), result.complete);
-          if (viewModel.complete() || result.complete) {
-            initialData.Complete = true;
+      .menu-item-button:hover {
+        background: #2a2b2c;
+      }
 
-            stageFrame.src =
-              API.E2020.addresses.ContentEngineViewersPath +
-              "LTILogin/Complete?enrollmentKey=" +
-              ActivityKeys.enrollmentKey;
-          }
-        } else {
-          console.error("Could not find word textbox element");
+      .menu-item-button.active {
+        background: #006cff;
+        animation: pulse 2s infinite;
+      }
+
+      .menu-item-button.writing {
+        background: #006cff;
+        animation: writing-pulse 2s infinite;
+      }
+
+      .menu-item-button.writing::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(
+          90deg,
+          transparent,
+          rgba(255, 255, 255, 0.2),
+          transparent
+        );
+        animation: wave 2s linear infinite;
+      }
+
+      @keyframes pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(0, 108, 255, 0.4);
+        }
+        70% {
+          box-shadow: 0 0 0 10px rgba(0, 108, 255, 0);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(0, 108, 255, 0);
         }
       }
-    } finally {
-      autoVocabButton.classList.remove("active", "writing");
+
+      @keyframes writing-pulse {
+        0% {
+          box-shadow: 0 0 5px rgba(0, 108, 255, 0.5),
+                      0 0 10px rgba(0, 108, 255, 0.3);
+        }
+        50% {
+          box-shadow: 0 0 10px rgba(0, 108, 255, 0.7),
+                      0 0 20px rgba(0, 108, 255, 0.5);
+        }
+        100% {
+          box-shadow: 0 0 5px rgba(0, 108, 255, 0.5),
+                      0 0 10px rgba(0, 108, 255, 0.3);
+        }
+      }
+
+      @keyframes wave {
+        0% {
+          left: -100%;
+        }
+        100% {
+          left: 100%;
+        }
+      }
+
+      .menu-body {
+        padding: 15px;
+        background: #1a1b1c;
+        border-radius: 6px;
+        margin-top: 8px;
+      }
+
+      .menu-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        height: 32px;
+      }
+
+      .menu-row label {
+        min-width: 100px;
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+        opacity: 0.9;
+      }
+
+      .input-group {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .input-with-unit {
+        position: relative;
+        width: 60px;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        height: 28px;
+        padding: 0 25px 0 8px;
+        background: #242526;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        -moz-appearance: textfield;
+      }
+
+      input[type="number"]::-webkit-outer-spin-button,
+      input[type="number"]::-webkit-inner-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      .input-unit {
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: rgba(255, 255, 255, 0.6);
+        font-size: 10px;
+        pointer-events: none;
+      }
+
+      .typing-dropdown {
+        position: relative;
+        width: 100%;
+      }
+
+      .dropdown-btn {
+        width: 100%;
+        height: 28px;
+        padding: 0 10px;
+        background: #242526;
+        border: none;
+        border-radius: 4px;
+        color: white;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 15px;
+        font-weight: 600;
+        text-align: left;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+
+      .dropdown-btn::after {
+        content: '▼';
+        font-size: 10px;
+        opacity: 0.7;
+      }
+
+      .dropdown-content {
+        position: absolute;
+        top: 100%;
+        left: 0;
+        width: 100%;
+        background: #242526;
+        border-radius: 4px;
+        z-index: 1;
+        margin-top: 4px;
+        display: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                    0 0 0 1px rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        overflow: hidden;
+      }
+
+      .dropdown-option {
+        text-align: left;
+        padding: 8px 10px;
+        color: white;
+        font-size: 15px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+      }
+
+      .dropdown-option:last-child {
+        border-bottom: none;
+      }
+
+      .dropdown-option:hover {
+        background: #2a2b2c;
+        padding-left: 15px;
+      }
+
+      .typing-dropdown.active .dropdown-content {
+        display: block;
+      }
+
+      .typing-dropdown.active .dropdown-content1 {
+        height: 380px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3),
+                    0 0 0 1px rgba(255, 255, 255, 0.05);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+      }
+
+      .custom-delay-input {
+        transition: all 0.3s ease;
+      }
+
+      .button-content {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+      }
+
+      .settings-icon,
+      .unlock-icon,
+      .rocket-icon,
+      .video-icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 4px;
+        transition: all 0.2s ease;
+        color: rgba(255, 255, 255, 0.7);
+      }
+
+      .settings-icon:hover,
+      .unlock-icon:hover,
+      .rocket-icon:hover,
+      .video-icon:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: white;
+      }
+
+      .button-text {
+        flex: 1;
+      }
+
+      /* Editor Writing Animation */
+      .cke_editable.writing-active {
+        position: relative;
+        border: 1px solid rgba(0, 108, 255, 0.3) !important;
+        box-shadow: 0 0 10px rgba(0, 108, 255, 0.2) !important;
+      }
+
+      .cke_editable.writing-active::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        height: 2px;
+        background: linear-gradient(90deg, #006cff, transparent);
+        animation: writing 2s ease-out infinite;
+      }
+
+      @keyframes writing {
+        0% {
+          width: 0;
+          opacity: 1;
+        }
+        50% {
+          width: 100%;
+          opacity: 1;
+        }
+        100% {
+          width: 100%;
+          opacity: 0;
+        }
+      }
+
+      .custom-placeholder-input {
+        margin-top: 8px;
+        transition: all 0.3s ease;
+      }
+
+      .custom-placeholder-input textarea {
+        width: 100%;
+        padding: 8px 12px;
+        background: #242526;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+        color: white;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        resize: vertical;
+        min-height: 80px;
+        line-height: 1.5;
+      }
+
+      .custom-placeholder-input textarea:focus {
+        outline: none;
+        border-color: rgba(0, 108, 255, 0.5);
+        box-shadow: 0 0 0 2px rgba(0, 108, 255, 0.2);
+      }
+
+      #examUnlockerItem .menu-item-button.active {
+        background: #006cff;
+        animation: pulse 2s infinite;
+      }
+
+      #examUnlockerItem .menu-body {
+        padding: 15px;
+        background: #1a1b1c;
+        border-radius: 6px;
+        margin-top: 8px;
+      }
+
+      .exam-panel-header {
+        cursor: grab;
+        user-select: none;
+        border-radius: 12px 12px 0 0;
+      }
+
+      .exam-panel-header:active {
+        cursor: grabbing;
+      }
+
+      .loading-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 1000000;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+      }
+
+      .loading-overlay.show {
+        opacity: 1;
+      }
+
+      .loading-spinner-container {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        text-align: center;
+      }
+
+      .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        border-top-color: #006cff;
+        animation: spin 1s ease-in-out infinite;
+      }
+
+      .loading-text {
+        color: white;
+        margin-top: 16px;
+        font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      @keyframes spin {
+        to { transform: rotate(360deg); }
+      }
+    `;
+
+    // Check if styles already exist
+    if (!document.getElementById("autoWritingMenuStyle")) {
+      document.head.appendChild(style);
     }
-  });
 
-  // Make menu draggable
-  const header = menu.querySelector(".menu-header");
-  let isDragging = false;
-  let currentX;
-  let currentY;
-  let initialX;
-  let initialY;
-  let xOffset = 0;
-  let yOffset = 0;
+    // Now append the menu
+    document.body.appendChild(menu);
 
-  header.addEventListener("mousedown", (e) => {
-    initialX = e.clientX - xOffset;
-    initialY = e.clientY - yOffset;
-    isDragging = true;
-  });
+    // 2. ADD EVENT LISTENERS
+    const autoWritingItem = document.getElementById("autoWritingItem");
+    const autoWritingButton =
+      autoWritingItem.querySelector(".menu-item-button");
+    const settingsIcon = autoWritingItem.querySelector(".settings-icon");
+    const autoWritingContent =
+      autoWritingItem.querySelector(".menu-item-content");
 
-  document.addEventListener("mousemove", (e) => {
-    if (isDragging) {
-      e.preventDefault();
-      currentX = e.clientX - initialX;
-      currentY = e.clientY - initialY;
-      xOffset = currentX;
-      yOffset = currentY;
-      menu.style.transform = `translate(${currentX}px, ${currentY}px)`;
-    }
-  });
+    // Toggle menu content
+    settingsIcon.addEventListener("click", () => {
+      const isExpanded = autoWritingContent.style.display !== "none";
+      autoWritingContent.style.display = isExpanded ? "none" : "block";
+      autoWritingButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
+    });
 
-  document.addEventListener("mouseup", () => {
-    isDragging = false;
-  });
+    // Button click handler (excluding settings icon) - start auto writing
+    autoWritingButton.addEventListener("click", (e) => {
+      if (e.target.closest(".settings-icon")) {
+        return;
+      }
 
-  // Add event listener for exam unlocker
-  const examUnlockerItem = document.getElementById("examUnlockerItem");
-  const examUnlockerButton =
-    examUnlockerItem.querySelector(".menu-item-button");
-  const unlockIcon = examUnlockerItem.querySelector(".unlock-icon");
-  const examContent = examUnlockerItem.querySelector(".menu-item-content");
+      const submitDelay1 = document.querySelector("#submitDelay1");
+      const submitDelay2 = document.querySelector("#submitDelay2");
+      const answerDelay = document.querySelector("#answerDelay");
+      const answerDelayBtn = document.querySelector("#answerDelayBtn");
+      const typingStyleBtn = document.querySelector("#typingStyleBtn");
 
-  // Toggle menu content when clicking the unlock icon
-  unlockIcon.addEventListener("click", (e) => {
-    e.stopPropagation();
-    const isExpanded = examContent.style.display !== "none";
-    examContent.style.display = isExpanded ? "none" : "block";
-    examUnlockerButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
-  });
+      // Validate configuration
+      if (
+        (submitDelay1.value === "0" && submitDelay2.value === "0") ||
+        parseInt(submitDelay1.value) > parseInt(submitDelay2.value)
+      ) {
+        alert("Error at submit delay");
+        return;
+      }
 
-  // Handle main button click (excluding unlock icon)
-  examUnlockerButton.addEventListener("click", (e) => {
-    if (e.target.closest(".unlock-icon")) {
-      return;
-    }
+      if (
+        answerDelay.value === "0" &&
+        answerDelayBtn.textContent.trim() === "Custom"
+      ) {
+        alert("Error at answer delay");
+        return;
+      }
 
-    // Update exam configuration
-    const config = {
-      isActive: examUnlockerButton.classList.contains("active"),
-      examInfo: document.querySelector("#examInfoBtn").textContent.trim(),
-    };
+      // Update button state
+      const isActive = !autoWritingButton.classList.contains("active");
+      updateAutoWritingState(isActive ? "active" : "idle");
 
-    // Call the callback with the configuration
-    if (typeof onExamCallback === "function") {
-      onExamCallback(config);
-    }
-  });
+      // Collect configuration data
+      const config = {
+        isActive: autoWritingButton.classList.contains("active"),
+        submitDelay: {
+          min: parseInt(submitDelay1.value) || 0,
+          max: parseInt(submitDelay2.value) || 0,
+        },
+        answerDelay: parseInt(answerDelay.value) || 0,
+        typingStyle: typingStyleBtn.textContent.trim(),
+        placeholder: document
+          .querySelector("#placeholderBtn")
+          .textContent.trim(),
+        placeholderText:
+          document.querySelector("#placeholderBtn").textContent.trim() ===
+          "Enabled"
+            ? document.querySelector("#placeholderText").value.trim()
+            : "",
+      };
+
+      // Call the callback with the configuration
+      if (typeof onStartCallback === "function") {
+        onStartCallback(config);
+      }
+    });
+
+    // Add dropdown functionality
+    const dropdowns = menu.querySelectorAll(".typing-dropdown");
+    dropdowns.forEach((dropdown) => {
+      const btn = dropdown.querySelector(".dropdown-btn");
+      const options = dropdown.querySelectorAll(".dropdown-option");
+
+      btn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        dropdowns.forEach((d) => {
+          if (d !== dropdown) d.classList.remove("active");
+        });
+        dropdown.classList.toggle("active");
+      });
+
+      options.forEach((option) => {
+        option.addEventListener("click", (e) => {
+          e.stopPropagation();
+          const selectedValue = option.getAttribute("data-value");
+          btn.textContent = option.textContent;
+          dropdown.classList.remove("active");
+
+          if (dropdown.classList.contains("answer-delay-dropdown")) {
+            const customDelayInput = menu.querySelector(".custom-delay-input");
+            if (selectedValue === "custom") {
+              customDelayInput.style.display = "block";
+            } else {
+              customDelayInput.style.display = "none";
+              document.querySelector("#answerDelay").value = "0";
+            }
+          }
+
+          // Add this block to handle placeholder dropdown
+          if (btn.id === "placeholderBtn") {
+            const customPlaceholderInput = menu.querySelector(
+              ".custom-placeholder-input"
+            );
+            if (option.textContent === "Enabled") {
+              customPlaceholderInput.style.display = "block";
+            } else {
+              customPlaceholderInput.style.display = "none";
+            }
+          }
+
+          // Add this block to handle exam info dropdown
+          if (btn.id === "examInfoBtn") {
+            if (option.textContent === "Enabled") {
+              // Example questions array - replace with actual API data
+              displayExamPanel(exampleQuestions);
+            } else {
+              const panel = document.querySelector("#examInfoPanel");
+              if (panel) panel.remove();
+            }
+
+            // Update exam configuration
+            const config = {
+              isActive: examUnlockerButton.classList.contains("active"),
+              examInfo: option.textContent,
+            };
+
+            // Call the callback with the configuration
+            if (typeof onExamCallback === "function") {
+              onExamCallback(config);
+            }
+          }
+        });
+      });
+    });
+
+    // Close dropdowns when clicking outside
+    document.addEventListener("click", () => {
+      dropdowns.forEach((dropdown) => dropdown.classList.remove("active"));
+    });
+
+    // Update the Auto Advance button click handler
+    const autoAdvanceItem = document.getElementById("autoAdvanceItem");
+    const autoAdvanceButton =
+      autoAdvanceItem?.querySelector(".menu-item-button");
+
+    autoAdvanceButton.addEventListener("click", async (e) => {
+      // Create and show loading overlay
+      const loadingOverlay = document.createElement("div");
+      loadingOverlay.className = "loading-overlay";
+      loadingOverlay.innerHTML = `
+        <div class="loading-spinner-container">
+          <div class="loading-spinner"></div>
+        </div>
+      `;
+      document.body.appendChild(loadingOverlay);
+
+      // Show loading overlay with animation
+      loadingOverlay.style.display = "block";
+      loadingOverlay.offsetHeight; // Force reflow
+      loadingOverlay.classList.add("show");
+
+      try {
+        // Fetch courses
+        // Add a small delay to ensure loading animation is visible
+        const courses = await getCourses();
+
+        // Hide loading overlay
+        loadingOverlay.classList.remove("show");
+        setTimeout(() => {
+          loadingOverlay.remove();
+        }, 300);
+
+        // Create and show modal
+        const modal = await createAutoAdvanceModal(courses);
+        if (modal.show) {
+          modal.show();
+        } else {
+          modal.classList.add("show");
+          modal.style.display = "block";
+        }
+      } catch (error) {
+        console.error("Error loading courses:", error);
+
+        // Hide loading overlay and show error message
+        loadingOverlay.classList.remove("show");
+        setTimeout(() => {
+          loadingOverlay.remove();
+          alert("Failed to load courses. Please try again.");
+        }, 300);
+      }
+    });
+
+    // Update the Auto Vocabulary button click handler
+    const autoVocabItem = document.getElementById("autoVocabItem");
+    const autoVocabButton = autoVocabItem?.querySelector(".menu-item-button");
+
+    let nextWord = true;
+    const stageFrame = getStageFrame();
+    autoVocabButton.addEventListener("click", async (e) => {
+      // Add wave animation effect
+      try {
+        if (!stageFrame?.contentWindow) {
+          alert("Content Window not found");
+          return;
+        }
+        autoVocabButton.classList.add("active", "writing");
+        while (nextWord) {
+          const contentWindow = stageFrame?.contentWindow;
+          let { viewModel, API, ActivityKeys, initialData } = contentWindow;
+          const word = viewModel?.currentWord();
+          const wordText = word?.word();
+          console.log("Current Word:", wordText);
+          const wordTextbox =
+            stageFrame?.contentDocument?.querySelector(".word-textbox");
+          if (wordTextbox) {
+            wordTextbox.value = wordText;
+
+            const keyupEvent = new Event("keyup");
+            wordTextbox.dispatchEvent(keyupEvent);
+
+            const url =
+              API.E2020.addresses.ContentEngineViewersPath +
+              "Vocab/UpdateAttempt?attemptKey=" +
+              ActivityKeys.resultKey +
+              "&completedWordKey=" +
+              word.key +
+              "&enrollmentKey=" +
+              ActivityKeys.enrollmentKey +
+              "&version=" +
+              ActivityKeys.version;
+
+            const response = await fetch(url, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json; charset=utf-8",
+              },
+            });
+            const result = await response.json();
+            console.log("Result:", result);
+
+            viewModel.currentWord().complete(true);
+            console.log("Words:", viewModel.words());
+            const currentWordIndex = viewModel.words().indexOf(word);
+            nextWord = viewModel.words()[currentWordIndex + 1];
+            if (nextWord) {
+              console.log("Next Word Rank:", nextWord.rank());
+              viewModel.nextAvailableWord(nextWord);
+              viewModel.currentWord().nextButton().state(true);
+              viewModel.selectWord(nextWord.rank());
+            }
+
+            console.log("Complete:", viewModel.complete(), result.complete);
+            if (viewModel.complete() || result.complete) {
+              initialData.Complete = true;
+
+              stageFrame.src =
+                API.E2020.addresses.ContentEngineViewersPath +
+                "LTILogin/Complete?enrollmentKey=" +
+                ActivityKeys.enrollmentKey;
+            }
+          } else {
+            console.error("Could not find word textbox element");
+          }
+        }
+      } finally {
+        autoVocabButton.classList.remove("active", "writing");
+      }
+    });
+
+    // Update the Auto Video button click handler
+    const autoVideoItem = document.getElementById("autoVideoItem");
+    const autoVideoButton = autoVideoItem?.querySelector(".menu-item-button");
+
+    autoVideoButton.addEventListener("click", async (e) => {
+      try {
+        if (!stageFrame?.contentWindow) {
+          alert("Content Window not found");
+          return;
+        }
+        console.log("--------------------------------");
+        autoVideoButton.classList.add("active", "writing");
+        const contentWindow = stageFrame?.contentWindow;
+        let { viewModel, API, ActivityKeys } = contentWindow;
+
+        const videoElement =
+          stageFrame.contentDocument.getElementById("home_video_js");
+        const { duration, currentTime } = videoElement;
+
+        const isSingle = API.FrameChain.framesStatus.length === 1;
+        const isCompleted = API.Frame.isComplete();
+
+        console.log("isCompleted", isCompleted);
+
+        if (!isCompleted) {
+          // Get existing video states
+          const existingStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
+          const existingStates = JSON.parse(existingStatesStr);
+
+          const existingState = existingStates.find(
+            (state) =>
+              state.id === initialization.InitialActivityData.ActivityOrder
+          );
+
+          console.log("existingState", Math.floor(duration - currentTime));
+
+          if (!existingState) {
+            const videoData = {
+              id: initialization.InitialActivityData.ActivityOrder,
+              duration: Math.floor(duration),
+              timestamp: Date.now(),
+              framesStatus: API.FrameChain.framesStatus || [],
+              title: initialization.InitialActivityData.LessonName,
+              remainingSeconds: Math.floor(duration - currentTime),
+            };
+
+            // Add new state to array
+            existingStates.push(videoData);
+
+            // Save updated states
+            await GM.setValue(VIDEO_STATES_KEY, JSON.stringify(existingStates));
+          }
+          // Navigate to coursemap
+          console.log(
+            "initialization.InitialLaunchData.ReturnURL",
+            initialization.InitialLaunchData.ReturnURL
+          );
+          window.location.href = initialization.InitialLaunchData.ReturnURL;
+        } else {
+          console.log("Activity already completed");
+          API.FrameChain.framesStatus = API.FrameChain.framesStatus.map(
+            (status) => "complete"
+          );
+          console.log("Next Frame:", API.FrameChain.nextFrame());
+          autoVideoButton.classList.remove("active", "writing");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+        autoVideoButton.classList.remove("active", "writing");
+      }
+    });
+
+    // Make menu draggable
+    const header = menu.querySelector(".menu-header");
+    let isDragging = false;
+    let currentX;
+    let currentY;
+    let initialX;
+    let initialY;
+    let xOffset = 0;
+    let yOffset = 0;
+
+    header.addEventListener("mousedown", (e) => {
+      initialX = e.clientX - xOffset;
+      initialY = e.clientY - yOffset;
+      isDragging = true;
+    });
+
+    document.addEventListener("mousemove", (e) => {
+      if (isDragging) {
+        e.preventDefault();
+        currentX = e.clientX - initialX;
+        currentY = e.clientY - initialY;
+        xOffset = currentX;
+        yOffset = currentY;
+        menu.style.transform = `translate(${currentX}px, ${currentY}px)`;
+      }
+    });
+
+    document.addEventListener("mouseup", () => {
+      isDragging = false;
+    });
+
+    // Add event listener for exam unlocker
+    const examUnlockerItem = document.getElementById("examUnlockerItem");
+    const examUnlockerButton =
+      examUnlockerItem.querySelector(".menu-item-button");
+    const unlockIcon = examUnlockerItem.querySelector(".unlock-icon");
+    const examContent = examUnlockerItem.querySelector(".menu-item-content");
+
+    // Toggle menu content when clicking the unlock icon
+    unlockIcon.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isExpanded = examContent.style.display !== "none";
+      examContent.style.display = isExpanded ? "none" : "block";
+      examUnlockerButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
+    });
+
+    // Handle main button click (excluding unlock icon)
+    examUnlockerButton.addEventListener("click", (e) => {
+      if (e.target.closest(".unlock-icon")) {
+        return;
+      }
+
+      // Update exam configuration
+      const config = {
+        isActive: examUnlockerButton.classList.contains("active"),
+        examInfo: document.querySelector("#examInfoBtn").textContent.trim(),
+      };
+
+      // Call the callback with the configuration
+      if (typeof onExamCallback === "function") {
+        onExamCallback(config);
+      }
+    });
+  } catch (error) {
+    console.error("Error initializing draggable menu:", error);
+  }
 }
 
 // Add this new function
@@ -1940,3 +2057,304 @@ async function createAutoAdvanceModal(courses = []) {
     element: modal,
   };
 }
+
+// Add this function to check if we're on the coursemap page
+function isCoursemapPage() {
+  return window.location.href.includes("/coursemap");
+}
+
+// Modify the DOMContentLoaded listener to ensure it runs
+document.addEventListener("DOMContentLoaded", async () => {
+  console.log("DOMContentLoaded triggered"); // Add this line
+
+  // Wrap in try-catch and add more detailed error logging
+  try {
+    // Check if GM functions are available
+    if (typeof GM === "undefined") {
+      console.error("GM is not defined - make sure @grant permissions are set");
+      return;
+    }
+    // Initialize video states storage
+    // await GM.setValue(VIDEO_STATES_KEY, JSON.stringify([]));
+
+    // Log each step for debugging
+    console.log("Checking storage values...");
+
+    // Get video states from storage
+    const videoStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
+
+    const videoStates = JSON.parse(videoStatesStr);
+    console.log("videoStates:", videoStates);
+
+    // Check if we're on the coursemap page and have active video states
+    if (isCoursemapPage() && videoStates.length > 0) {
+      console.log("Found video states on coursemap page:", videoStates.length);
+
+      // Process each video state
+      for (const videoData of videoStates) {
+        console.log("Processing video state:", videoData);
+
+        let { id, remainingSeconds, duration, timestamp } = videoData;
+        if (remainingSeconds > 0) {
+          remainingSeconds = Math.floor(
+            duration - (Date.now() - timestamp) / 1000
+          );
+          videoData.remainingSeconds = remainingSeconds;
+        }
+
+        if (remainingSeconds < 0) {
+          console.log("highlighting activity", id);
+          // Add progress bar styles if they don't exist
+          // Add styles for highlighting completed activities
+          if (!document.getElementById("activity-highlight-style")) {
+            const style = document.createElement("style");
+            style.id = "activity-highlight-style";
+            style.textContent = `
+            .activity-highlighted {
+              box-shadow: 0 0 15px rgba(0, 108, 255, 0.7) !important;
+              border: 2px solid #006cff !important;
+              transition: all 0.3s ease;
+              position: relative;
+              z-index: 10;
+            }
+            
+            .activity-highlighted::before {
+              content: '';
+              position: absolute;
+              top: 0;
+              left: 0;
+              right: 0;
+              bottom: 0;
+              border-radius: inherit;
+              background: rgba(0, 108, 255, 0.05);
+              pointer-events: none;
+            }
+            
+            @keyframes pulseHighlight {
+              0% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
+              50% { box-shadow: 0 0 20px rgba(0, 108, 255, 0.8); }
+              100% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
+            }
+          `;
+            document.head.appendChild(style);
+          }
+
+          // Function to highlight activity by ID
+          function highlightActivityById(activityId) {
+            // Wait for the element to be available in the DOM
+            const checkElement = setInterval(() => {
+              const activityElement = document.getElementById(activityId);
+              if (activityElement) {
+                clearInterval(checkElement);
+                if (
+                  activityElement.classList.contains(
+                    "ActivityTile-status-completed"
+                  )
+                ) {
+                  // Skip highlighting for completed activities
+                  console.log("Skipping highlight for completed activity");
+
+                  // Remove any existing video state for this activity
+                  (async () => {
+                    try {
+                      const existingStatesStr = await GM.getValue(
+                        VIDEO_STATES_KEY,
+                        "[]"
+                      );
+                      const existingStates = JSON.parse(existingStatesStr);
+
+                      // Filter out the current activity ID
+                      const filteredStates = existingStates.filter(
+                        (state) => state.id !== activityId
+                      );
+
+                      // Save the updated states
+                      await GM.setValue(
+                        VIDEO_STATES_KEY,
+                        JSON.stringify(filteredStates)
+                      );
+                      console.log(
+                        `Removed video state for activity ${activityId}`
+                      );
+                    } catch (error) {
+                      console.error("Error removing video state:", error);
+                    }
+                  })();
+                } else {
+                  // Add highlight class
+                  activityElement.classList.add("activity-highlighted");
+
+                  // Scroll element into view with smooth behavior
+                  activityElement.scrollIntoView({
+                    behavior: "smooth",
+                    block: "center",
+                  });
+
+                  // Apply animation
+                  activityElement.style.animation =
+                    "pulseHighlight 2s infinite";
+                  console.log("activityElement", activityElement);
+
+                  console.log(
+                    `Activity ${activityId} highlighted successfully`
+                  );
+                }
+              }
+            }, 500); // Check every 500ms
+          }
+
+          // Highlight the specific activity
+          highlightActivityById("fbbe2089-1d2e-e911-a982-005056b56147");
+        } else {
+          // Add progress bar styles if they don't exist
+          if (!document.getElementById("timer-overlay-style")) {
+            const style = document.createElement("style");
+            style.id = "timer-overlay-style";
+            style.textContent = `
+                @keyframes progressAnimation {
+                  from { width: 0%; }
+                  to { width: 100%; }
+                }
+                
+                .progress-container {
+                  width: 100%;
+                  height: 4px;
+                  background: rgba(255, 255, 255, 0.1);
+                  border-radius: 2px;
+                  margin-top: 12px;
+                  overflow: hidden;
+                }
+                
+                .progress-bar {
+                  height: 100%;
+                  background: #006cff;
+                  border-radius: 2px;
+                  transition: width 1s linear;
+                  animation: pulse 2s infinite;
+                }
+                
+                @keyframes pulse {
+                  0% { opacity: 0.6; }
+                  50% { opacity: 1; }
+                  100% { opacity: 0.6; }
+                }
+              `;
+            document.head.appendChild(style);
+          }
+
+          // Create timer overlay with video information
+          const overlay = document.createElement("div");
+          overlay.id = `timerOverlay-${videoData.id}`;
+          overlay.style.cssText = `
+              position: fixed;
+              top: 20px;
+              right: 20px;
+              background: #141517;
+              padding: 15px 20px;
+              border-radius: 12px;
+              color: white;
+              font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+              font-size: 14px;
+              font-weight: 600;
+              z-index: 1000000;
+              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              animation: slideIn 0.3s ease-out;
+            `;
+
+          const updateOverlay = (seconds) => {
+            const progressPercentage =
+              ((videoData.duration - seconds) / videoData.duration) * 100;
+
+            overlay.innerHTML = `
+                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <polyline points="12 6 12 12 16 14"></polyline>
+                  </svg>
+                  <span style="color: #006cff; font-weight: bold;">Video Info</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: rgba(255,255,255,0.7)">Remaining:</span>
+                    <span style="color: #006cff; width: 70px; display: flex; justify-content: flex-end;">${seconds} sec</span>
+                  </div>
+                  <div style="display: flex; justify-content: space-between;">
+                    <span style="color: rgba(255,255,255,0.7)">Single Frame:</span>
+                    <span>${
+                      videoData.framesStatus.length === 1 ? "Yes" : "No"
+                    }</span>
+                  </div>
+                  <div class="progress-container">
+                    <div class="progress-bar" style="width: ${progressPercentage}%"></div>
+                  </div>
+                </div>
+              `;
+          };
+
+          document.body.appendChild(overlay);
+
+          // Trigger animation after a short delay
+          setTimeout(() => {
+            overlay.style.opacity = "1";
+            overlay.style.transform = "translateY(0)";
+          }, 100);
+
+          let seconds = remainingSeconds;
+          updateOverlay(seconds);
+
+          const countdown = setInterval(async () => {
+            seconds--;
+            updateOverlay(seconds);
+
+            // Update the remaining seconds in the video state
+            videoData.remainingSeconds = seconds;
+
+            // Update all video states in storage
+            await GM.setValue(VIDEO_STATES_KEY, JSON.stringify(videoStates));
+
+            if (seconds < 0) {
+              clearInterval(countdown);
+              overlay.style.opacity = "0";
+              overlay.style.transform = "translateY(-20px)";
+
+              // setTimeout(async () => {
+              //   overlay.remove();
+
+              //   // Remove this video state from the array
+              //   const updatedStates = videoStates.filter(
+              //     (state) => state.id !== videoData.id
+              //   );
+              //   await GM.setValue(
+              //     VIDEO_STATES_KEY,
+              //     JSON.stringify(updatedStates)
+              //   );
+              // }, 300);
+            }
+          }, 1000);
+        }
+      }
+    }
+  } catch (error) {
+    console.error("Error in DOMContentLoaded:", error);
+    console.error("Error stack:", error.stack);
+  }
+});
+
+// Also add a load event listener as backup
+window.addEventListener("load", () => {
+  console.log("Window load event triggered");
+});
+
+// Add cleanup on page unload
+window.addEventListener("beforeunload", async () => {
+  const timerOverlay = document.getElementById("timerOverlay");
+  if (timerOverlay) {
+    timerOverlay.remove();
+  }
+});
+
+// Add this constant at the top of the file
+const VIDEO_STATES_KEY = "video_states";
