@@ -18,11 +18,15 @@ module.exports = {
 // @author       Revolt
 // @match        https://student.edgenuity.com/
 // @match        https://*.core.learn.edgenuity.com/player/
+// @match        https://student.edgenuity.com/enrollment/*/coursemap*
+
 // @grant        GM_xmlhttpRequest
 // @grant        GM_getValue
 // @grant        GM_setValue
 // @grant        GM_addStyle
+// @grant        GM_deleteValue
 // @connect      *
+// @run-at       document-start
 // ==/UserScript==`,
       raw: true,
     }),

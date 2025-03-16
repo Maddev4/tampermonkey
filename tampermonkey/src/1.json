@@ -1,0 +1,201 @@
+{
+  "pk": "12101a46-3be9-4f9f-a4ac-7ac63e4b8176",
+  "Services": {
+    "Main": {
+      "Name": "Main",
+      "Location": "https://r22.core.learn.edgenuity.com/player/LTILaunch/"
+    },
+    "Overlay": {
+      "Name": "Overlay",
+      "Location": "https://r22.core.learn.edgenuity.com/player/Overlay/"
+    },
+    "Note": {
+      "Name": "Note",
+      "Location": "https://core.learn.edgenuity.com/noteapi/api/ENotes"
+    },
+    "Glossary": {
+      "Name": "Glossary",
+      "Location": "https://r22.core.learn.edgenuity.com/contentengineapi/api/glossary/getwordlistbyid/"
+    },
+    "Transcript": {
+      "Name": "Transcript",
+      "Location": "https://r22.core.learn.edgenuity.com/contentengineapi/api/"
+    },
+    "proxy": {
+      "Name": "Dictionary",
+      "Location": "/Player/Proxy"
+    },
+    "AssessmentLessonList": {
+      "Name": "AssessmentLessonList",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/enote/getrelatednotes/"
+    },
+    "Activity": {
+      "Name": "Activity",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation/getnextactivity"
+    },
+    "CurrentActivity": {
+      "Name": "CurrentActivity",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation//GetCurrentActivity"
+    },
+    "EndActivity": {
+      "Name": "EndActivity",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation/getendactivityinfo"
+    },
+    "StartActivity": {
+      "Name": "StartActivity",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation//StartActivity"
+    },
+    "LoadActivityAttempt": {
+      "Name": "LoadActivityAttempt",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation/loadactivityattempt"
+    },
+    "PrevActivity": {
+      "Name": "PrevActivity",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation/getpreviousactivity"
+    },
+    "LTILink": {
+      "Name": "LTILink",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/lti/getltilink"
+    },
+    "GradeBarInfo": {
+      "Name": "GradeBarInfo",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/graderesult/GetGradeBarInfo"
+    },
+    "SessionHandler": {
+      "Name": "SessionHandler",
+      "Location": "https://r22.core.learn.edgenuity.com/student/LogSessionInfo.ashx"
+    },
+    "ReadAloud": {
+      "Name": "ReadAloud",
+      "Location": "//edgenuityservices.speechstream.net/SpeechServices/index.html"
+    },
+    "teacherComment": {
+      "Name": "teacherComment",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/TeacherComment/GetTeacherComment"
+    },
+    "score": {
+      "Name": "score",
+      "Location": "/ContentEngineAPI/api/Scores/"
+    },
+    "LeavePageURL": {
+      "Name": "LeavePageURL",
+      "Location": "/LMSAPI/req/Navigation/LeavePage/"
+    },
+    "GetEndActivityInfoURL": {
+      "Name": "GetEndActivityInfoURL",
+      "Location": "/req/Navigation/GetEndActivityInfo/"
+    },
+    "Tools": {
+      "Name": "Tools",
+      "Location": "https://r22.core.learn.edgenuity.com/lmsapi/req/tool/gettools"
+    }
+  },
+  "StartActivity": {
+    "CourseId": "08de38cf-fa35-4797-b323-bcd02bab139f",
+    "CurrentId": "6f016e41-6a62-6365-7473-000000000000"
+  },
+  "InitialLaunchData": {
+    "ResourceLinkID": "12770c09-3500-45fb-99b2-f6f4fcd3c848",
+    "LearningObjectKey": "6f016e41-6a62-6365-7473-000000000000",
+    "LessonKey": "6f016e40-6a62-6365-7473-000000000000",
+    "NavigationURL": "https://r22.core.learn.edgenuity.com/lmsapi/req/navigation/",
+    "ResultID": "cc4e9fa0-f328-4553-872d-a33099066a4c",
+    "Role": "Learner",
+    "UserID": "237763278",
+    "UpdateGradeURL": "https://r22.core.learn.edgenuity.com/lis/ResultManager.svc/ReplaceResult/",
+    "ContextID": "e271c730-edfb-474b-bd01-1a06dcd4f3e2",
+    "CEContextID": "e271c730-edfb-474b-bd01-1a06dcd4f3e2",
+    "FirstName": "ana",
+    "LastName": "nona",
+    "CourseName": "Art History I - EL4002 - T4L",
+    "LessonName": "Modern Art in Latin America",
+    "ActivityName": "Direct Instruction",
+    "Email": "",
+    "ReturnURL": "https://student.edgenuity.com/enrollment/e271c730-edfb-474b-bd01-1a06dcd4f3e2/coursemap?=&returnOrder=5dc02089-1d2e-e911-a982-005056b56147",
+    "SchoolName": "TIME4LEARNING (HOMESCHOOL)",
+    "SchoolID": "74116",
+    "DistrictID": "24945",
+    "DistrictName": "TIME4LEARNING (T4L)",
+    "SelectedStudentChatType": "",
+    "StudentEmail": " ",
+    "Subject": "Electives",
+    "TranslateEnabled": false,
+    "TranslateLocation": "//learn.education2020.com/cdn/translation/1.0/cache/minify.js",
+    "ReadAloudEnabled": false,
+    "SessionKey": "jxwquhvrcey5lgwpbqbwqjkq",
+    "ContentVariableLookupURL": "https://r22.core.learn.edgenuity.com/lmsapi/req/lti/getcontentvariables",
+    "StudentOptions": 1,
+    "CourseID": "263508019",
+    "ToolsService": "https://r22.core.learn.edgenuity.com/lmsapi/req/tool/gettools",
+    "ConsumerKey": "player",
+    "IsSSLimited": "False",
+    "AllowPretestsAndQuizzes": "False",
+    "WYSIWYGEnabled": true,
+    "IsT4L": true,
+    "UseLargePlayer": false,
+    "EssayType": "",
+    "touchEnabled": false,
+    "SessionID": "184007713",
+    "LogoutURL": "/Student/Authentication/Logout",
+    "InactivityTimeout": 1620000,
+    "InactivityCountdown": 180000,
+    "SessionCallbackTimeout": 180000,
+    "Impersonation": false,
+    "ImpersonationURL": "",
+    "LMSCourseID": "e271c730-edfb-474b-bd01-1a06dcd4f3e2",
+    "RequestTime": 1742144891000,
+    "IsRestrictedActivity": false,
+    "HideENotes": false,
+    "LMSAPIBasePath": "https://r22.core.learn.edgenuity.com/lmsapi/",
+    "GoPeerToken": null,
+    "GradeLevel": "12",
+    "GradebookDeepLink": "https://r22.core.learn.edgenuity.com/Educator/StudentTools/Gradebook.aspx?deeplink=true&courseID=e271c730-edfb-474b-bd01-1a06dcd4f3e2&stuId=237763278&lmsSchId=74116",
+    "UseLockdownBrowser": false,
+    "ObjectType": "VL",
+    "SessionToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJJc3N1ZXIiOiJFZGdlbnVpdHkuY29tIiwiQXVkaWVuY2UiOiJodHRwOi8vd3d3LmVkZ2VudWl0eS5jb20iLCJFeHBpcmF0aW9uIjoiXC9EYXRlKDE3NDIxNTAyOTQ2NjUpXC8iLCJOb3RCZWZvcmUiOiJcL0RhdGUoMTc0MjE0NDg5NDY2NSlcLyIsIklzc3VlZEF0IjoiXC9EYXRlKDE3NDIxNDQ4OTQ2NjUpXC8iLCJBdHRlbXB0SUQiOiJjYzRlOWZhMC1mMzI4LTQ1NTMtODcyZC1hMzMwOTkwNjZhNGMiLCJTZXNzaW9uSUQiOjE4NDAwNzcxM30.r9Ynmc0DiUlnu7FxZL7NE9Hh2Fr-pjeh0kgDrSsATig"
+  },
+  "InitialActivityData": {
+    "Hash": null,
+    "LessonName": "Modern Art in Latin America",
+    "ActivityName": "Direct Instruction",
+    "ActivityStatus": "Active",
+    "ActivityOrder": "5dc02089-1d2e-e911-a982-005056b56147",
+    "CourseID": null,
+    "AttemptID": "",
+    "GlossaryID": "6f016e40-6a62-6365-7473-000000000000",
+    "ToolsID": "93760",
+    "NotesID": "player_6f016e40-6a62-6365-7473-000000000000_e271c730-edfb-474b-bd01-1a06dcd4f3e2",
+    "TranscriptID": "6f016e41-6a62-6365-7473-000000000000",
+    "LearningObjectKey": "6f016e41-6a62-6365-7473-000000000000",
+    "LessonKey": "00000000-0000-0000-0000-000000000000",
+    "ResourceLinkID": "",
+    "Progress": 40,
+    "PrevActivity": {
+      "LessonName": "Characteristics of Modern Art in America",
+      "ActivityName": "Quiz",
+      "ActivityOrder": "5bc02089-1d2e-e911-a982-005056b56147"
+    },
+    "NextActivity": {
+      "LessonName": "Modern Art in Latin America",
+      "ActivityName": "Vocabulary",
+      "ActivityOrder": "5ec02089-1d2e-e911-a982-005056b56147"
+    },
+    "Warning": null,
+    "ShowOverlay": false,
+    "LookupLink": null,
+    "UserID": null,
+    "ContextID": null,
+    "CEContextID": null,
+    "Role": null,
+    "ConsumerKey": "player",
+    "NavigationLocked": false,
+    "EssayType": null,
+    "ObjectType": null,
+    "IsRestrictedActivity": false,
+    "UserRedirectUrl": null
+  },
+  "Brand": "- Imagine Edgenuity for Students",
+  "EnableScriptDetection": true,
+  "RedirectURL": null,
+  "RedirectError": false
+}
