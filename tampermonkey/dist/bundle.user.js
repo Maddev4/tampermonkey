@@ -2201,6 +2201,9 @@ function initDraggableMenu(onStartCallback, onExamCallback) {
 
         const isSingle = API.FrameChain.framesStatus.length === 1;
         const isCompleted = API.Frame.isComplete();
+        const activityId = initialization.InitialActivityData.ActivityOrder;
+
+        console.log("activityOrder", activityId);
 
         console.log("isCompleted", isCompleted);
 
@@ -2208,22 +2211,21 @@ function initDraggableMenu(onStartCallback, onExamCallback) {
           // Get existing video states
           const existingStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
           const existingStates = JSON.parse(existingStatesStr);
-
           const existingState = existingStates.find(
-            (state) =>
-              state.id === initialization.InitialActivityData.ActivityOrder
+            (state) => state.id === activityId
           );
 
           console.log("existingState", Math.floor(duration - currentTime));
 
           if (!existingState) {
             const videoData = {
-              id: initialization.InitialActivityData.ActivityOrder,
+              id: activityId,
               duration: Math.floor(duration),
               timestamp: Date.now(),
               framesStatus: API.FrameChain.framesStatus || [],
               title: initialization.InitialActivityData.LessonName,
               remainingSeconds: Math.floor(duration - currentTime),
+              returnURL: `https://r22.core.learn.edgenuity.com/lmsapi/sle/api/enrollments/${initialization.InitialLaunchData.ContextID}/activity/${initialization.InitialActivityData.ActivityOrder}`,
             };
 
             // Add new state to array
@@ -2240,11 +2242,39 @@ function initDraggableMenu(onStartCallback, onExamCallback) {
           window.location.href = initialization.InitialLaunchData.ReturnURL;
         } else {
           console.log("Activity already completed");
-          API.FrameChain.framesStatus = API.FrameChain.framesStatus.map(
-            (status) => "complete"
+          // Find the first incomplete frame and mark it as complete
+          const firstIncompleteIndex = API.FrameChain.framesStatus.findIndex(
+            (status) => status !== "complete"
           );
+
+          if (firstIncompleteIndex !== -1) {
+            API.FrameChain.framesStatus[firstIncompleteIndex] = "complete";
+          }
           console.log("Next Frame:", API.FrameChain.nextFrame());
           autoVideoButton.classList.remove("active", "writing");
+          (async () => {
+            try {
+              const existingStatesStr = await GM.getValue(
+                VIDEO_STATES_KEY,
+                "[]"
+              );
+              const existingStates = JSON.parse(existingStatesStr);
+
+              // Filter out the current activity ID
+              const filteredStates = existingStates.filter(
+                (state) => state.id !== activityId
+              );
+
+              // Save the updated states
+              await GM.setValue(
+                VIDEO_STATES_KEY,
+                JSON.stringify(filteredStates)
+              );
+              console.log(`Removed video state for activity ${activityId}`);
+            } catch (error) {
+              console.error("Error removing video state:", error);
+            }
+          })();
         }
       } catch (error) {
         console.error("Error:", error);
@@ -3263,251 +3293,339 @@ document.addEventListener("DOMContentLoaded", async () => {
       console.log("Found video states on coursemap page:", videoStates.length);
 
       // Process each video state
-      for (const videoData of videoStates) {
-        console.log("Processing video state:", videoData);
-
-        let { id, remainingSeconds, duration, timestamp } = videoData;
-        if (remainingSeconds > 0) {
-          remainingSeconds = Math.floor(
-            duration - (Date.now() - timestamp) / 1000
-          );
-          videoData.remainingSeconds = remainingSeconds;
+      // Create styles for highlighting and video states display
+      if (!document.getElementById("activity-highlight-style")) {
+        const style = document.createElement("style");
+        style.id = "activity-highlight-style";
+        style.textContent = `
+        .activity-highlighted {
+          box-shadow: 0 0 15px rgba(0, 108, 255, 0.7) !important;
+          border: 2px solid #006cff !important;
+          transition: all 0.3s ease;
+          position: relative;
+          z-index: 10;
         }
+        
+        .activity-highlighted::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          border-radius: inherit;
+          background: rgba(0, 108, 255, 0.05);
+          pointer-events: none;
+        }
+        
+        @keyframes pulseHighlight {
+          0% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
+          50% { box-shadow: 0 0 20px rgba(0, 108, 255, 0.8); }
+          100% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
+        }
+      `;
+        document.head.appendChild(style);
+      }
 
-        if (remainingSeconds < 0) {
-          console.log("highlighting activity", id);
-          // Add progress bar styles if they don't exist
-          // Add styles for highlighting completed activities
-          if (!document.getElementById("activity-highlight-style")) {
-            const style = document.createElement("style");
-            style.id = "activity-highlight-style";
-            style.textContent = `
-            .activity-highlighted {
-              box-shadow: 0 0 15px rgba(0, 108, 255, 0.7) !important;
-              border: 2px solid #006cff !important;
-              transition: all 0.3s ease;
-              position: relative;
-              z-index: 10;
+      if (!document.getElementById("timer-overlay-style")) {
+        const style = document.createElement("style");
+        style.id = "timer-overlay-style";
+        style.textContent = `
+            @keyframes progressAnimation {
+              from { width: 0%; }
+              to { width: 100%; }
             }
             
-            .activity-highlighted::before {
-              content: '';
-              position: absolute;
-              top: 0;
-              left: 0;
-              right: 0;
-              bottom: 0;
-              border-radius: inherit;
-              background: rgba(0, 108, 255, 0.05);
-              pointer-events: none;
+            .progress-container {
+              width: 100%;
+              height: 4px;
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 2px;
+              margin-top: 12px;
+              overflow: hidden;
             }
             
-            @keyframes pulseHighlight {
-              0% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
-              50% { box-shadow: 0 0 20px rgba(0, 108, 255, 0.8); }
-              100% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
+            .progress-bar {
+              height: 100%;
+              background: #006cff;
+              border-radius: 2px;
+              transition: width 1s linear;
+              animation: pulse 2s infinite;
+            }
+            
+            @keyframes pulse {
+              0% { opacity: 0.6; }
+              50% { opacity: 1; }
+              100% { opacity: 0.6; }
+            }
+            
+            .video-states-container {
+              margin-top: 15px;
+              max-height: 300px;
+              overflow-y: auto;
+              overflow-x: hidden;
+              border-top: 1px solid rgba(255, 255, 255, 0.1);
+              padding-top: 10px;
+              scrollbar-width: thin;
+              scrollbar-color: rgba(0, 108, 255, 0.5) rgba(255, 255, 255, 0.1);
+            }
+            
+            .video-states-container::-webkit-scrollbar {
+              width: 6px;
+            }
+            
+            .video-states-container::-webkit-scrollbar-track {
+              background: rgba(255, 255, 255, 0.1);
+              border-radius: 3px;
+            }
+            
+            .video-states-container::-webkit-scrollbar-thumb {
+              background: rgba(0, 108, 255, 0.5);
+              border-radius: 3px;
+              transition: background 0.3s ease;
+            }
+            
+            .video-states-container::-webkit-scrollbar-thumb:hover {
+              background: rgba(0, 108, 255, 0.7);
+            }
+            
+            .video-state-item {
+              padding: 12px;
+              border-radius: 8px;
+              background: rgba(255, 255, 255, 0.05);
+              margin-bottom: 8px;
+              font-size: 12px;
+              transition: all 0.2s ease;
+              border: 1px solid transparent;
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+              width: 100%;
+            }
+            
+            .video-state-item:hover {
+              background: rgba(255, 255, 255, 0.08);
+              border-color: rgba(0, 108, 255, 0.3);
+              transform: translateX(4px);
+            }
+            
+            .video-state-item.complete {
+              cursor: pointer;
+              border-left: 3px solid #006cff;
+            }
+            
+            .video-state-item.complete:hover {
+              background: rgba(0, 108, 255, 0.1);
+            }
+            
+            .video-state-title {
+              font-weight: 600;
+              color: #006cff;
+              margin-bottom: 4px;
+              word-wrap: break-word;
+              overflow-wrap: break-word;
+            }
+            
+            .video-state-info {
+              display: flex;
+              justify-content: space-between;
+              color: rgba(255, 255, 255, 0.7);
+              flex-wrap: wrap;
+              gap: 4px;
             }
           `;
-            document.head.appendChild(style);
-          }
-
-          // Function to highlight activity by ID
-          function highlightActivityById(activityId) {
-            // Wait for the element to be available in the DOM
-            const checkElement = setInterval(() => {
-              const activityElement = document.getElementById(activityId);
-              if (activityElement) {
-                clearInterval(checkElement);
-                if (
-                  activityElement.classList.contains(
-                    "ActivityTile-status-completed"
-                  )
-                ) {
-                  // Skip highlighting for completed activities
-                  console.log("Skipping highlight for completed activity");
-
-                  // Remove any existing video state for this activity
-                  (async () => {
-                    try {
-                      const existingStatesStr = await GM.getValue(
-                        VIDEO_STATES_KEY,
-                        "[]"
-                      );
-                      const existingStates = JSON.parse(existingStatesStr);
-
-                      // Filter out the current activity ID
-                      const filteredStates = existingStates.filter(
-                        (state) => state.id !== activityId
-                      );
-
-                      // Save the updated states
-                      await GM.setValue(
-                        VIDEO_STATES_KEY,
-                        JSON.stringify(filteredStates)
-                      );
-                      console.log(
-                        `Removed video state for activity ${activityId}`
-                      );
-                    } catch (error) {
-                      console.error("Error removing video state:", error);
-                    }
-                  })();
-                } else {
-                  // Add highlight class
-                  activityElement.classList.add("activity-highlighted");
-
-                  // Scroll element into view with smooth behavior
-                  activityElement.scrollIntoView({
-                    behavior: "smooth",
-                    block: "center",
-                  });
-
-                  // Apply animation
-                  activityElement.style.animation =
-                    "pulseHighlight 2s infinite";
-                  console.log("activityElement", activityElement);
-
-                  console.log(
-                    `Activity ${activityId} highlighted successfully`
-                  );
-                }
-              }
-            }, 500); // Check every 500ms
-          }
-
-          // Highlight the specific activity
-          highlightActivityById("fbbe2089-1d2e-e911-a982-005056b56147");
-        } else {
-          // Add progress bar styles if they don't exist
-          if (!document.getElementById("timer-overlay-style")) {
-            const style = document.createElement("style");
-            style.id = "timer-overlay-style";
-            style.textContent = `
-                @keyframes progressAnimation {
-                  from { width: 0%; }
-                  to { width: 100%; }
-                }
-                
-                .progress-container {
-                  width: 100%;
-                  height: 4px;
-                  background: rgba(255, 255, 255, 0.1);
-                  border-radius: 2px;
-                  margin-top: 12px;
-                  overflow: hidden;
-                }
-                
-                .progress-bar {
-                  height: 100%;
-                  background: #006cff;
-                  border-radius: 2px;
-                  transition: width 1s linear;
-                  animation: pulse 2s infinite;
-                }
-                
-                @keyframes pulse {
-                  0% { opacity: 0.6; }
-                  50% { opacity: 1; }
-                  100% { opacity: 0.6; }
-                }
-              `;
-            document.head.appendChild(style);
-          }
-
-          // Create timer overlay with video information
-          const overlay = document.createElement("div");
-          overlay.id = `timerOverlay-${videoData.id}`;
-          overlay.style.cssText = `
-              position: fixed;
-              top: 20px;
-              right: 20px;
-              background: #141517;
-              padding: 15px 20px;
-              border-radius: 12px;
-              color: white;
-              font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-              font-size: 14px;
-              font-weight: 600;
-              z-index: 1000000;
-              box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-              display: flex;
-              align-items: center;
-              gap: 8px;
-              animation: slideIn 0.3s ease-out;
-            `;
-
-          const updateOverlay = (seconds) => {
-            const progressPercentage =
-              ((videoData.duration - seconds) / videoData.duration) * 100;
-
-            overlay.innerHTML = `
-                <div style="margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                  </svg>
-                  <span style="color: #006cff; font-weight: bold;">Video Info</span>
-                </div>
-                <div style="display: flex; flex-direction: column; gap: 8px;">
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: rgba(255,255,255,0.7)">Remaining:</span>
-                    <span style="color: #006cff; width: 70px; display: flex; justify-content: flex-end;">${seconds} sec</span>
-                  </div>
-                  <div style="display: flex; justify-content: space-between;">
-                    <span style="color: rgba(255,255,255,0.7)">Single Frame:</span>
-                    <span>${
-                      videoData.framesStatus.length === 1 ? "Yes" : "No"
-                    }</span>
-                  </div>
-                  <div class="progress-container">
-                    <div class="progress-bar" style="width: ${progressPercentage}%"></div>
-                  </div>
-                </div>
-              `;
-          };
-
-          document.body.appendChild(overlay);
-
-          // Trigger animation after a short delay
-          setTimeout(() => {
-            overlay.style.opacity = "1";
-            overlay.style.transform = "translateY(0)";
-          }, 100);
-
-          let seconds = remainingSeconds;
-          updateOverlay(seconds);
-
-          const countdown = setInterval(async () => {
-            seconds--;
-            updateOverlay(seconds);
-
-            // Update the remaining seconds in the video state
-            videoData.remainingSeconds = seconds;
-
-            // Update all video states in storage
-            await GM.setValue(VIDEO_STATES_KEY, JSON.stringify(videoStates));
-
-            if (seconds < 0) {
-              clearInterval(countdown);
-              overlay.style.opacity = "0";
-              overlay.style.transform = "translateY(-20px)";
-
-              // setTimeout(async () => {
-              //   overlay.remove();
-
-              //   // Remove this video state from the array
-              //   const updatedStates = videoStates.filter(
-              //     (state) => state.id !== videoData.id
-              //   );
-              //   await GM.setValue(
-              //     VIDEO_STATES_KEY,
-              //     JSON.stringify(updatedStates)
-              //   );
-              // }, 300);
-            }
-          }, 1000);
-        }
+        document.head.appendChild(style);
       }
+
+      // Create overlay for video states list
+      const overlay = document.createElement("div");
+      overlay.id = "videoStatesOverlay";
+      overlay.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: #141517;
+          padding: 20px;
+          border-radius: 12px;
+          color: white;
+          font-family: 'Poppins', system-ui, -apple-system, sans-serif;
+          font-size: 14px;
+          font-weight: 600;
+          z-index: 1000000;
+          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+          display: flex;
+          flex-direction: column;
+          max-width: 350px;
+          min-width: 300px;
+          animation: slideIn 0.3s ease-out;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+        `;
+
+      // Create the video states section
+      const videoStatesSection = document.createElement("div");
+      videoStatesSection.className = "video-states-container";
+
+      // Add a header for the video states section
+      const videoStatesHeader = document.createElement("div");
+      videoStatesHeader.style.cssText = `
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+      `;
+      videoStatesHeader.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="23 7 16 12 23 17 23 7"></polygon>
+            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
+          </svg>
+          <span style="color: #006cff; font-weight: bold;">All Video States (${videoStates.length})</span>
+        </div>
+      `;
+
+      // Add the video states section to the overlay
+      overlay.appendChild(videoStatesHeader);
+      overlay.appendChild(videoStatesSection);
+      document.body.appendChild(overlay);
+
+      // Function to update the video states display
+      const updateVideoStatesDisplay = (states) => {
+        // Clear existing items
+        videoStatesSection.innerHTML = "";
+
+        // Add each video state as an item
+        states.forEach((state) => {
+          const stateItem = document.createElement("div");
+          stateItem.className = "video-state-item";
+
+          // Format the timestamp
+          const date = new Date(state.timestamp);
+          const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
+
+          // Calculate remaining time
+          const elapsedSeconds = Math.floor(
+            (Date.now() - state.timestamp) / 1000
+          );
+          const currentRemaining = Math.max(
+            0,
+            state.remainingSeconds - elapsedSeconds
+          );
+
+          // Check if video is complete
+          const isComplete = currentRemaining <= 0;
+
+          // Add complete class if video is complete
+          if (isComplete) {
+            stateItem.classList.add("complete");
+          }
+
+          // Create the state item content
+          stateItem.innerHTML = `
+            <div class="video-state-title" title="${
+              state.title || "Unnamed Video"
+            }">${state.title || "Unnamed Video"}</div>
+            <div class="video-state-info">
+              <span style="color: ${isComplete ? "#00c853" : "#006cff"}">
+                ${
+                  isComplete
+                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Complete'
+                    : `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${currentRemaining}s left`
+                }
+              </span>
+            </div>
+            <div class="video-state-info">
+              <span>Duration: ${state.duration}s</span>
+              <span>Frames: ${state.framesStatus.length}</span>
+            </div>
+            <div class="video-state-info" style="font-size: 10px; margin-top: 4px; color: rgba(255,255,255,0.5);">
+              ${formattedDate}
+            </div>
+          `;
+
+          // Add click event if complete
+          if (isComplete) {
+            stateItem.addEventListener("click", () => {
+              window.open(state.returnURL, "_blank");
+            });
+          }
+
+          videoStatesSection.appendChild(stateItem);
+        });
+      };
+
+      // Initial display of video states
+      updateVideoStatesDisplay(videoStates);
+
+      // Trigger animation after a short delay
+      setTimeout(() => {
+        overlay.style.opacity = "1";
+        overlay.style.transform = "translateY(0)";
+      }, 100);
+
+      // Update the video states periodically
+      const updateInterval = setInterval(async () => {
+        // Get the latest video states
+        const videoStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
+        const videoStates = JSON.parse(videoStatesStr);
+
+        const updatedLength = videoStates.filter(
+          (state) => state.remainingSeconds > 0
+        ).length;
+
+        console.log("updatedLength", updatedLength);
+
+        const updatedVideoStates = videoStates.map((state) =>
+          state.remainingSeconds > 0
+            ? {
+                ...state,
+                remainingSeconds: (() => {
+                  // Calculate elapsed time since the timestamp
+                  const elapsedSeconds = Math.floor(
+                    (Date.now() - state.timestamp) / 1000
+                  );
+                  // Calculate remaining time based on duration and elapsed time
+                  const calculatedRemaining = Math.max(
+                    0,
+                    state.duration - elapsedSeconds
+                  );
+                  // Use the smaller of the calculated remaining time or the current countdown
+                  return Math.min(
+                    calculatedRemaining,
+                    state.remainingSeconds > 1 ? state.remainingSeconds - 1 : 0
+                  );
+                })(),
+              }
+            : state
+        );
+
+        // Save the updated video states back to storage
+        await GM.setValue(VIDEO_STATES_KEY, JSON.stringify(updatedVideoStates));
+
+        // Check if any videos have completed during this update
+        const newlyCompleted = updatedVideoStates.filter(
+          (state, index) =>
+            state.remainingSeconds <= 0 &&
+            videoStates[index].remainingSeconds > 0
+        );
+
+        // Log any newly completed videos
+        if (newlyCompleted.length > 0) {
+          console.log("Newly completed videos:", newlyCompleted);
+          // Could add notification or visual feedback here
+        }
+        // ~~~~~~~~~~~~~~~~~~ Can Move Up Following Code ~~~~~~~~~~~~~~~~~~
+        // Update the display with the latest states
+        updateVideoStatesDisplay(updatedVideoStates);
+
+        // If no video states left, remove the overlay
+        if (videoStates.length === 0) {
+          clearInterval(updateInterval);
+          overlay.style.opacity = "0";
+          overlay.style.transform = "translateY(-20px)";
+          setTimeout(() => overlay.remove(), 300);
+        }
+      }, 5000);
     }
   } catch (error) {
     console.error("Error in DOMContentLoaded:", error);
