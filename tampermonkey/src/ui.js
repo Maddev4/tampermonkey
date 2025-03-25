@@ -166,6 +166,22 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
             </div>
           </button>
         </div>
+        <div class="menu-item" id="autoInstructionItem">
+          <button class="menu-item-button">
+            <div class="button-content">
+              <div class="instruction-icon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                  <polyline points="14 2 14 8 20 8"></polyline>
+                  <line x1="16" y1="13" x2="8" y2="13"></line>
+                  <line x1="16" y1="17" x2="8" y2="17"></line>
+                  <polyline points="10 9 9 9 8 9"></polyline>
+                </svg>
+              </div>
+              <span class="button-text">Auto Instruction</span>
+            </div>
+          </button>
+        </div>
         <div class="menu-item" id="autoAdvanceItem">
           <button class="menu-item-button">
             <div class="button-content">
@@ -178,7 +194,21 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
               <span class="button-text">Auto Advance</span>
             </div>
           </button>
-        </div>
+          <div class="menu-item-content" style="display: none;">
+            <div class="menu-body">
+            <div class="menu-row">
+            <label>Advance Type:</label>
+                <div class="typing-dropdown" style="width: 100%;">
+                  <button class="dropdown-btn" id="autoAdvanceTypeBtn">Select type</button>
+                  <div class="dropdown-content">
+                    <div class="dropdown-option" data-value="single">Single Course</div>
+                    <div class="dropdown-option" data-value="all">All Courses</div>
+                  </div>
+                </div>
+                </div>
+              </div>
+                  </div>
+                </div>
         <div class="menu-item" id="autoWritingItem">
           <button class="menu-item-button">
             <div class="button-content">
@@ -574,7 +604,8 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
       .settings-icon,
       .unlock-icon,
       .rocket-icon,
-      .video-icon {
+      .video-icon,
+      .instruction-icon {
         display: flex;
         align-items: center;
         justify-content: center;
@@ -588,7 +619,8 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
       .settings-icon:hover,
       .unlock-icon:hover,
       .rocket-icon:hover,
-      .video-icon:hover {
+      .video-icon:hover,
+      .instruction-icon:hover {
         background: rgba(255, 255, 255, 0.1);
         color: white;
       }
@@ -883,16 +915,80 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
     const autoAdvanceItem = document.getElementById("autoAdvanceItem");
     const autoAdvanceButton =
       autoAdvanceItem?.querySelector(".menu-item-button");
+    const rocketIcon = autoAdvanceItem.querySelector(".rocket-icon");
+    const autoAdvanceContent =
+      autoAdvanceItem.querySelector(".menu-item-content");
 
+    // Toggle menu content when clicking the rocket icon
+    rocketIcon.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const isExpanded = autoAdvanceContent.style.display !== "none";
+      autoAdvanceContent.style.display = isExpanded ? "none" : "block";
+      autoAdvanceButton.style.background = isExpanded ? "#242526" : "#2a2b2c";
+      // // Toggle dropdown content when clicking the dropdown button
+      // const autoAdvanceTypeBtn = document.querySelector("#autoAdvanceTypeBtn");
+      // const dropdownContent = autoAdvanceTypeBtn.nextElementSibling;
+
+      // autoAdvanceTypeBtn.addEventListener("click", (e) => {
+      //   e.stopPropagation();
+      //   const isActive = dropdownContent.classList.contains("active");
+
+      //   console.log("isActive", isActive);
+
+      //   // Close all other dropdowns first
+      //   document.querySelectorAll(".dropdown-content").forEach((content) => {
+      //     content.classList.remove("active");
+      //   });
+
+      //   // Toggle this dropdown
+      //   if (isActive) {
+      //     dropdownContent.classList.remove("active");
+      //   } else {
+      //     dropdownContent.classList.add("active");
+      //   }
+      // });
+    });
+
+    // Handle main button click (excluding rocket icon)
     autoAdvanceButton.addEventListener("click", async (e) => {
+      if (e.target.closest(".rocket-icon")) {
+        return;
+      }
+
+      autoAdvanceButton.classList.add("active");
+
+      const selectedType = document
+        .querySelector("#autoAdvanceTypeBtn")
+        .textContent.trim();
+
+      if (selectedType === "Select type") {
+        alert("Please select an advance type first");
+        return;
+      }
+
+      // Set tamper value advanceClick as true
+      GM_setValue("advanceClick", 1);
+      GM_setValue("advanceType", selectedType);
+      if (selectedType === "All Courses") {
+        console.log(
+          "All Courses",
+          window.location.href.split("coursemap")[0] + "coursemap"
+        );
+        GM_setValue(
+          "backUrl",
+          window.location.href.split("coursemap")[0] + "coursemap"
+        );
+      }
+
+      // if (selectedType === "Single Course") {
       // Create and show loading overlay
       const loadingOverlay = document.createElement("div");
       loadingOverlay.className = "loading-overlay";
       loadingOverlay.innerHTML = `
-        <div class="loading-spinner-container">
-          <div class="loading-spinner"></div>
-        </div>
-      `;
+          <div class="loading-spinner-container">
+            <div class="loading-spinner"></div>
+          </div>
+        `;
       document.body.appendChild(loadingOverlay);
 
       // Show loading overlay with animation
@@ -902,7 +998,6 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
 
       try {
         // Fetch courses
-        // Add a small delay to ensure loading animation is visible
         const courses = await getCourses();
 
         // Hide loading overlay
@@ -929,6 +1024,35 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
           alert("Failed to load courses. Please try again.");
         }, 300);
       }
+    });
+
+    // Add dropdown functionality for auto advance type
+    const autoAdvanceDropdown =
+      autoAdvanceItem.querySelector(".typing-dropdown");
+    const autoAdvanceBtn = autoAdvanceDropdown.querySelector(".dropdown-btn");
+    const autoAdvanceOptions =
+      autoAdvanceDropdown.querySelectorAll(".dropdown-option");
+
+    autoAdvanceBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      // console.log(autoAdvanceDropdown.classList, "autoAdvanceBtn clicked ? ");
+
+      // autoAdvanceDropdown.classList.toggle("active");
+      // if (autoAdvanceDropdown.classList.contains("active")) {
+      //   autoAdvanceDropdown.classList.remove("active");
+      // } else {
+      //   autoAdvanceDropdown.classList.add("active");
+      // }
+    });
+
+    autoAdvanceOptions.forEach((option) => {
+      option.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const selectedValue = option.getAttribute("data-value");
+        autoAdvanceBtn.textContent =
+          selectedValue === "single" ? "Single Course" : "All Courses";
+        option.classList.remove("active");
+      });
     });
 
     // Update the Auto Vocabulary button click handler
@@ -1012,102 +1136,151 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
     const autoVideoItem = document.getElementById("autoVideoItem");
     const autoVideoButton = autoVideoItem?.querySelector(".menu-item-button");
 
-    autoVideoButton.addEventListener("click", async (e) => {
-      try {
-        if (!stageFrame?.contentWindow) {
-          alert("Content Window not found");
-          return;
-        }
-        console.log("--------------------------------");
-        autoVideoButton.classList.add("active", "writing");
-        const contentWindow = stageFrame?.contentWindow;
-        let { API } = contentWindow;
+    function nextFrame(stageFrame) {
+      if (
+        window.getActivatedModules &&
+        window.getActivatedModules().includes("delay-advance")
+      ) {
+        let GMSettings = GM_getValue("settings", {});
+        let minDelay = GMSettings["advance-delay"]?.["Instruction"]?.[0] || 1;
+        let maxDelay = GMSettings["advance-delay"]?.["Instruction"]?.[1] || 3;
+        let delay =
+          Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
 
-        const videoElement =
-          stageFrame.contentDocument.getElementById("home_video_js");
-        const { duration, currentTime } = videoElement;
-
-        const isSingle = API.FrameChain.framesStatus.length === 1;
-        const isCompleted = API.Frame.isComplete();
-        const activityId = initialization.InitialActivityData.ActivityOrder;
-
-        console.log("activityOrder", activityId);
-
-        console.log("isCompleted", isCompleted);
-
-        if (!isCompleted) {
-          // Get existing video states
-          const existingStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
-          const existingStates = JSON.parse(existingStatesStr);
-          const existingState = existingStates.find(
-            (state) => state.id === activityId
-          );
-
-          console.log("existingState", Math.floor(duration - currentTime));
-
-          if (!existingState) {
-            const videoData = {
-              id: activityId,
-              duration: Math.floor(duration),
-              timestamp: Date.now(),
-              framesStatus: API.FrameChain.framesStatus || [],
-              title: initialization.InitialActivityData.LessonName,
-              remainingSeconds: Math.floor(duration - currentTime),
-              returnURL: `https://r22.core.learn.edgenuity.com/lmsapi/sle/api/enrollments/${initialization.InitialLaunchData.ContextID}/activity/${initialization.InitialActivityData.ActivityOrder}`,
-            };
-
-            // Add new state to array
-            existingStates.push(videoData);
-
-            // Save updated states
-            await GM.setValue(VIDEO_STATES_KEY, JSON.stringify(existingStates));
-          }
-          // Navigate to coursemap
-          console.log(
-            "initialization.InitialLaunchData.ReturnURL",
-            initialization.InitialLaunchData.ReturnURL
-          );
-          window.location.href = initialization.InitialLaunchData.ReturnURL;
-        } else {
-          console.log("Activity already completed");
-          // Find the first incomplete frame and mark it as complete
-          const firstIncompleteIndex = API.FrameChain.framesStatus.findIndex(
-            (status) => status !== "complete"
-          );
-
-          if (firstIncompleteIndex !== -1) {
-            API.FrameChain.framesStatus[firstIncompleteIndex] = "complete";
-          }
-          console.log("Next Frame:", API.FrameChain.nextFrame());
-          autoVideoButton.classList.remove("active", "writing");
-          (async () => {
-            try {
-              const existingStatesStr = await GM.getValue(
-                VIDEO_STATES_KEY,
-                "[]"
-              );
-              const existingStates = JSON.parse(existingStatesStr);
-
-              // Filter out the current activity ID
-              const filteredStates = existingStates.filter(
-                (state) => state.id !== activityId
-              );
-
-              // Save the updated states
-              await GM.setValue(
-                VIDEO_STATES_KEY,
-                JSON.stringify(filteredStates)
-              );
-              console.log(`Removed video state for activity ${activityId}`);
-            } catch (error) {
-              console.error("Error removing video state:", error);
-            }
-          })();
-        }
-      } catch (error) {
-        console.error("Error:", error);
-        autoVideoButton.classList.remove("active", "writing");
+        setTimeout(() => {
+          stageFrame.contentWindow.API.FrameChain.nextFrame();
+          // console.log("Next question clicked after " + delay + " seconds.");
+        }, delay * 1000);
+      } else {
+        // console.log("Without delay.");
+        stageFrame.contentWindow.API.FrameChain.nextFrame();
       }
+    }
+
+    autoVideoButton.addEventListener("click", async (e) => {
+      autoVideoButton.classList.add("active", "writing");
+      const autoVideoInterval = setInterval(async () => {
+        try {
+          if (!stageFrame?.contentWindow) {
+            alert("Content Window not found");
+            return;
+          }
+          const contentWindow = stageFrame?.contentWindow;
+          let { API } = contentWindow;
+
+          // Find the activity title element
+          const activityTitleElement =
+            document.getElementById("activity-title");
+          const activityTitle = activityTitleElement
+            ? activityTitleElement.textContent.trim().toLowerCase()
+            : null;
+
+          const videoElement =
+            stageFrame.contentDocument.getElementById("home_video_js");
+
+          let duration = videoElement?.duration || null;
+          let currentTime = videoElement?.currentTime || null;
+
+          const isCompleted = API.Frame.isComplete();
+
+          const questionsFrame =
+            stageFrame?.contentDocument?.getElementById("iFramePreview");
+          const isAVideo = questionsFrame?.style.display === "none";
+
+          console.log("isAVideo", isAVideo);
+
+          if (!isCompleted) {
+            if (
+              activityTitle &&
+              [
+                "instruction",
+                "warmup",
+                "summary",
+                "lecture",
+                "lablecture",
+                "directinstruction",
+              ].includes(activityTitle)
+            ) {
+              if (isAVideo) {
+                if (duration - currentTime < 5 && duration != 0) {
+                  nextFrame(stageFrame);
+                  return;
+                } else {
+                  return;
+                }
+              }
+
+              const iframePreview = getIFramePreview();
+              // console.log("iframePreview", iframePreview);
+              if (iframePreview) {
+                const questions =
+                  iframePreview.contentDocument?.querySelectorAll(
+                    "div[fstack]"
+                  );
+
+                console.log("Questions:", questions);
+
+                questions.forEach((question) => {
+                  setTimeout(() => {
+                    let clickedAmount = 0;
+                    let input = question.querySelectorAll("input");
+                    console.log("Input:", input);
+                    if (input && input.length > 0) {
+                      Array.from(input).forEach((input) =>
+                        Math.random() > 0.5 ? input.click() : null
+                      ); // Click a random input
+                      clickedAmount++;
+                    }
+
+                    let select = question.querySelector("select");
+                    // We don't need to do anything here, since edgenuity doesn't require you to select anything in these types of questions.
+                    if (select) clickedAmount++;
+
+                    let ifFW = question.querySelector("iframe");
+                    let hintButton =
+                      ifFW?.contentDocument?.getElementById("onlyButton");
+                    if (hintButton) {
+                      setInterval(() => {
+                        hintButton.click();
+                        clickedAmount++;
+                      }, 250);
+                    }
+
+                    const doneButton =
+                      question.querySelectorAll("div[title='done']");
+                    if (
+                      doneButton &&
+                      doneButton.length > 0 &&
+                      clickedAmount > 0
+                    ) {
+                      Array.from(doneButton).forEach((button) =>
+                        button.click()
+                      );
+                      nextFrame(stageFrame);
+                    }
+                  }, 500);
+                });
+              }
+            }
+          } else {
+            //   console.log("Activity already completed");
+            //   // Find the first incomplete frame and mark it as complete
+            //   const firstIncompleteIndex = API.FrameChain.framesStatus.findIndex(
+            //     (status) => status !== "complete"
+            //   );
+
+            //   if (firstIncompleteIndex !== -1) {
+            //     API.FrameChain.framesStatus[firstIncompleteIndex] = "complete";
+            //   }
+            //   console.log("Next Frame:", API.FrameChain.nextFrame());
+            //   autoVideoButton.classList.remove("active", "writing");
+            nextFrame(stageFrame);
+          }
+        } catch (error) {
+          console.error("Error:", error);
+          autoVideoButton.classList.remove("active", "writing");
+        }
+      }, 1000);
     });
 
     // Make menu draggable
@@ -2088,391 +2261,271 @@ async function createAutoAdvanceModal(courses = []) {
   };
 }
 
-// Add this function to check if we're on the coursemap page
-function isCoursemapPage() {
-  return window.location.href.includes("/coursemap");
+// Function to handle redirection to current activity
+function redirectToCurrentActivity() {
+  // Check if we're on the student.edgenuity.com domain
+  console.log("Checking for current activity tile...");
+
+  // Set up a function to check for the element
+  const checkForCurrentActivity = () => {
+    // Find the element with the current activity status
+    const currentActivityElement = document.querySelector(
+      ".ActivityTile-status-current"
+    );
+
+    if (currentActivityElement) {
+      // Find the closest parent that has an href (likely an <a> tag)
+      let parent = currentActivityElement;
+      while (parent && !parent.href) {
+        parent = parent.parentElement;
+      }
+
+      // If we found an element with href, redirect to it
+      if (parent && parent.href) {
+        console.log("Found current activity, redirecting to:", parent.href);
+        // Set tamper value advanceClick as false
+        window.location.href = parent.href;
+        console.log("Redirecting to:", parent.href);
+      } else {
+        console.log("Current activity found but no href attribute available");
+      }
+      return true; // Element found
+    } else {
+      console.log("No current activity tile found yet, waiting...");
+      return false; // Element not found
+    }
+  };
+
+  // Try immediately first
+  if (!checkForCurrentActivity()) {
+    // If not found, set up an interval to keep checking
+    const intervalId = setInterval(() => {
+      if (checkForCurrentActivity()) {
+        clearInterval(intervalId); // Stop checking once found
+      }
+    }, 1000); // Check every second
+
+    // Stop checking after 30 seconds to prevent infinite loops
+    setTimeout(() => {
+      clearInterval(intervalId);
+      console.log("Gave up waiting for current activity element");
+    }, 30000);
+  }
 }
 
-// Modify the DOMContentLoaded listener to ensure it runs
-document.addEventListener("DOMContentLoaded", async () => {
-  console.log("DOMContentLoaded triggered"); // Add this line
+let checkForStageFrameInterval;
+function validateFunction() {
+  console.log("Checking for current activity tile...");
 
-  // Wrap in try-catch and add more detailed error logging
+  // Try immediately first
+  if (!checkForStageFrame()) {
+    // If not found, set up an interval to keep checking
+    checkForStageFrameInterval = setInterval(() => {
+      console.log("checkforstageframe called");
+      checkForStageFrame();
+    }, 1000); // Check every second
+    console.log(
+      "checkForStageFrameInterval ##############",
+      checkForStageFrameInterval
+    );
+  }
+}
+
+let currentFrame = null;
+let videoCheckInterval = null;
+
+function checkForStageFrame() {
+  const stageFrame = getStageFrame();
+
+  if (stageFrame && JSON.stringify(stageFrame) !== "{}") {
+    console.log("Stage frame found, proceeding with validation");
+    return processStageFrame(stageFrame);
+  } else {
+    console.log("Stage frame not found yet, waiting...");
+    return false; // stageFrame not found
+  }
+}
+
+function processStageFrame(stageFrame) {
+  const contentWindow = stageFrame?.contentWindow;
+  const autoAdvanceItem = document.getElementById("autoAdvanceItem");
+  const autoAdvanceButton = autoAdvanceItem?.querySelector(".menu-item-button");
+
+  let { API } = contentWindow;
+  if (
+    !API ||
+    API?.FrameChain?.currentFrame === currentFrame ||
+    (API.FrameChain.currentFrame === 1 && !API?.Video?.wrapper)
+  ) {
+    console.log("API is not available");
+    return false;
+  }
+  // console.log("Current frame Updated", API?.FrameChain?.currentFrame);
+  // currentFrame = API?.FrameChain?.currentFrame;
+  console.log("checkForStageFrameInterval", checkForStageFrameInterval);
+  clearInterval(checkForStageFrameInterval);
+  clearInterval(videoCheckInterval);
+  // autoAdvanceButton.classList.add("active", "writing");
+  // const isCompleted = API.Frame.isComplete();
+
+  // // Log API information for debugging
+  // logAPIInfo(API);
+
+  // // Determine if content is a video or not
+  // const isAVideo = checkIfVideo(API);
+  // console.log("isAVideo", isAVideo);
+
+  // if (isAVideo) {
+  //   handleVideoContent(stageFrame, isCompleted, API, autoAdvanceButton);
+  // } else {
+  //   handleNonVideoContent(stageFrame, isCompleted, API, autoAdvanceButton);
+  // }
+
   try {
-    // Check if GM functions are available
-    if (typeof GM === "undefined") {
-      console.error("GM is not defined - make sure @grant permissions are set");
-      return;
-    }
-    // Initialize video states storage
-    // await GM.setValue(VIDEO_STATES_KEY, JSON.stringify([]));
+    // Find the activity title element
+    const activityTitleElement = document.getElementById("activity-title");
+    const activityTitle = activityTitleElement
+      ? activityTitleElement.textContent.trim().toLowerCase()
+      : null;
 
-    // Log each step for debugging
-    console.log("Checking storage values...");
+    autoAdvanceButton.classList.add("active", "writing");
 
-    // Get video states from storage
-    const videoStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
+    const videoElement =
+      stageFrame.contentDocument.getElementById("home_video_js");
 
-    const videoStates = JSON.parse(videoStatesStr);
-    console.log("videoStates:", videoStates);
+    let duration = videoElement?.duration || null;
+    let currentTime = videoElement?.currentTime || null;
 
-    // Check if we're on the coursemap page and have active video states
-    if (isCoursemapPage() && videoStates.length > 0) {
-      console.log("Found video states on coursemap page:", videoStates.length);
+    const isCompleted = API.Frame.isComplete();
 
-      // Process each video state
-      // Create styles for highlighting and video states display
-      if (!document.getElementById("activity-highlight-style")) {
-        const style = document.createElement("style");
-        style.id = "activity-highlight-style";
-        style.textContent = `
-        .activity-highlighted {
-          box-shadow: 0 0 15px rgba(0, 108, 255, 0.7) !important;
-          border: 2px solid #006cff !important;
-          transition: all 0.3s ease;
-          position: relative;
-          z-index: 10;
+    const questionsFrame =
+      stageFrame?.contentDocument?.getElementById("iFramePreview");
+    const isAVideo = questionsFrame?.style.display === "none";
+
+    console.log("isAVideo", isAVideo);
+
+    if (!isCompleted) {
+      if (isAVideo) {
+        console.log("Video is playing");
+        if (videoCheckInterval) {
+          clearInterval(videoCheckInterval);
         }
-        
-        .activity-highlighted::before {
-          content: '';
-          position: absolute;
-          top: 0;
-          left: 0;
-          right: 0;
-          bottom: 0;
-          border-radius: inherit;
-          background: rgba(0, 108, 255, 0.05);
-          pointer-events: none;
-        }
-        
-        @keyframes pulseHighlight {
-          0% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
-          50% { box-shadow: 0 0 20px rgba(0, 108, 255, 0.8); }
-          100% { box-shadow: 0 0 15px rgba(0, 108, 255, 0.4); }
-        }
-      `;
-        document.head.appendChild(style);
-      }
-
-      if (!document.getElementById("timer-overlay-style")) {
-        const style = document.createElement("style");
-        style.id = "timer-overlay-style";
-        style.textContent = `
-            @keyframes progressAnimation {
-              from { width: 0%; }
-              to { width: 100%; }
-            }
-            
-            .progress-container {
-              width: 100%;
-              height: 4px;
-              background: rgba(255, 255, 255, 0.1);
-              border-radius: 2px;
-              margin-top: 12px;
-              overflow: hidden;
-            }
-            
-            .progress-bar {
-              height: 100%;
-              background: #006cff;
-              border-radius: 2px;
-              transition: width 1s linear;
-              animation: pulse 2s infinite;
-            }
-            
-            @keyframes pulse {
-              0% { opacity: 0.6; }
-              50% { opacity: 1; }
-              100% { opacity: 0.6; }
-            }
-            
-            .video-states-container {
-              margin-top: 15px;
-              max-height: 300px;
-              overflow-y: auto;
-              overflow-x: hidden;
-              border-top: 1px solid rgba(255, 255, 255, 0.1);
-              padding-top: 10px;
-              scrollbar-width: thin;
-              scrollbar-color: rgba(0, 108, 255, 0.5) rgba(255, 255, 255, 0.1);
-            }
-            
-            .video-states-container::-webkit-scrollbar {
-              width: 6px;
-            }
-            
-            .video-states-container::-webkit-scrollbar-track {
-              background: rgba(255, 255, 255, 0.1);
-              border-radius: 3px;
-            }
-            
-            .video-states-container::-webkit-scrollbar-thumb {
-              background: rgba(0, 108, 255, 0.5);
-              border-radius: 3px;
-              transition: background 0.3s ease;
-            }
-            
-            .video-states-container::-webkit-scrollbar-thumb:hover {
-              background: rgba(0, 108, 255, 0.7);
-            }
-            
-            .video-state-item {
-              padding: 12px;
-              border-radius: 8px;
-              background: rgba(255, 255, 255, 0.05);
-              margin-bottom: 8px;
-              font-size: 12px;
-              transition: all 0.2s ease;
-              border: 1px solid transparent;
-              word-wrap: break-word;
-              overflow-wrap: break-word;
-              width: 100%;
-            }
-            
-            .video-state-item:hover {
-              background: rgba(255, 255, 255, 0.08);
-              border-color: rgba(0, 108, 255, 0.3);
-              transform: translateX(4px);
-            }
-            
-            .video-state-item.complete {
-              cursor: pointer;
-              border-left: 3px solid #006cff;
-            }
-            
-            .video-state-item.complete:hover {
-              background: rgba(0, 108, 255, 0.1);
-            }
-            
-            .video-state-title {
-              font-weight: 600;
-              color: #006cff;
-              margin-bottom: 4px;
-              word-wrap: break-word;
-              overflow-wrap: break-word;
-            }
-            
-            .video-state-info {
-              display: flex;
-              justify-content: space-between;
-              color: rgba(255, 255, 255, 0.7);
-              flex-wrap: wrap;
-              gap: 4px;
-            }
-          `;
-        document.head.appendChild(style);
-      }
-
-      // Create overlay for video states list
-      const overlay = document.createElement("div");
-      overlay.id = "videoStatesOverlay";
-      overlay.style.cssText = `
-          position: fixed;
-          top: 20px;
-          right: 20px;
-          background: #141517;
-          padding: 20px;
-          border-radius: 12px;
-          color: white;
-          font-family: 'Poppins', system-ui, -apple-system, sans-serif;
-          font-size: 14px;
-          font-weight: 600;
-          z-index: 1000000;
-          box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-          display: flex;
-          flex-direction: column;
-          max-width: 350px;
-          min-width: 300px;
-          animation: slideIn 0.3s ease-out;
-          border: 1px solid rgba(255, 255, 255, 0.1);
-        `;
-
-      // Create the video states section
-      const videoStatesSection = document.createElement("div");
-      videoStatesSection.className = "video-states-container";
-
-      // Add a header for the video states section
-      const videoStatesHeader = document.createElement("div");
-      videoStatesHeader.style.cssText = `
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 15px;
-        padding-bottom: 10px;
-        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
-      `;
-      videoStatesHeader.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 8px;">
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#006cff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <polygon points="23 7 16 12 23 17 23 7"></polygon>
-            <rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect>
-          </svg>
-          <span style="color: #006cff; font-weight: bold;">All Video States (${videoStates.length})</span>
-        </div>
-      `;
-
-      // Add the video states section to the overlay
-      overlay.appendChild(videoStatesHeader);
-      overlay.appendChild(videoStatesSection);
-      document.body.appendChild(overlay);
-
-      // Function to update the video states display
-      const updateVideoStatesDisplay = (states) => {
-        // Clear existing items
-        videoStatesSection.innerHTML = "";
-
-        // Add each video state as an item
-        states.forEach((state) => {
-          const stateItem = document.createElement("div");
-          stateItem.className = "video-state-item";
-
-          // Format the timestamp
-          const date = new Date(state.timestamp);
-          const formattedDate = `${date.toLocaleDateString()} ${date.toLocaleTimeString()}`;
-
-          // Calculate remaining time
-          const elapsedSeconds = Math.floor(
-            (Date.now() - state.timestamp) / 1000
-          );
-          const currentRemaining = Math.max(
-            0,
-            state.remainingSeconds - elapsedSeconds
-          );
-
-          // Check if video is complete
-          const isComplete = currentRemaining <= 0;
-
-          // Add complete class if video is complete
-          if (isComplete) {
-            stateItem.classList.add("complete");
+        videoCheckInterval = setInterval(() => {
+          currentTime = videoElement?.currentTime || 0;
+          console.log("currentTime", currentTime);
+          if (duration - currentTime < 2 && duration != 0) {
+            clearInterval(videoCheckInterval);
+            nextFrame(API);
+            setTimeout(() => {
+              checkForStageFrame();
+              return;
+            }, 5000);
+          } else {
+            return;
           }
+        }, 1000);
+        return;
+      } else if (activityTitle === "instruction") {
+        console.log("Instruction is playing");
+        const iframePreview = getIFramePreview();
+        // console.log("iframePreview", iframePreview);
+        if (iframePreview) {
+          const questions =
+            iframePreview.contentDocument?.querySelectorAll("div[fstack]");
 
-          // Create the state item content
-          stateItem.innerHTML = `
-            <div class="video-state-title" title="${
-              state.title || "Unnamed Video"
-            }">${state.title || "Unnamed Video"}</div>
-            <div class="video-state-info">
-              <span style="color: ${isComplete ? "#00c853" : "#006cff"}">
-                ${
-                  isComplete
-                    ? '<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Complete'
-                    : `<svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg> ${currentRemaining}s left`
-                }
-              </span>
-            </div>
-            <div class="video-state-info">
-              <span>Duration: ${state.duration}s</span>
-              <span>Frames: ${state.framesStatus.length}</span>
-            </div>
-            <div class="video-state-info" style="font-size: 10px; margin-top: 4px; color: rgba(255,255,255,0.5);">
-              ${formattedDate}
-            </div>
-          `;
+          console.log("Questions:", questions);
 
-          // Add click event if complete
-          if (isComplete) {
-            stateItem.addEventListener("click", () => {
-              window.open(state.returnURL, "_blank");
-            });
-          }
-
-          videoStatesSection.appendChild(stateItem);
-        });
-      };
-
-      // Initial display of video states
-      updateVideoStatesDisplay(videoStates);
-
-      // Trigger animation after a short delay
-      setTimeout(() => {
-        overlay.style.opacity = "1";
-        overlay.style.transform = "translateY(0)";
-      }, 100);
-
-      // Update the video states periodically
-      const updateInterval = setInterval(async () => {
-        // Get the latest video states
-        const videoStatesStr = await GM.getValue(VIDEO_STATES_KEY, "[]");
-        const videoStates = JSON.parse(videoStatesStr);
-
-        const updatedLength = videoStates.filter(
-          (state) => state.remainingSeconds > 0
-        ).length;
-
-        console.log("updatedLength", updatedLength);
-
-        const updatedVideoStates = videoStates.map((state) =>
-          state.remainingSeconds > 0
-            ? {
-                ...state,
-                remainingSeconds: (() => {
-                  // Calculate elapsed time since the timestamp
-                  const elapsedSeconds = Math.floor(
-                    (Date.now() - state.timestamp) / 1000
-                  );
-                  // Calculate remaining time based on duration and elapsed time
-                  const calculatedRemaining = Math.max(
-                    0,
-                    state.duration - elapsedSeconds
-                  );
-                  // Use the smaller of the calculated remaining time or the current countdown
-                  return Math.min(
-                    calculatedRemaining,
-                    state.remainingSeconds > 1 ? state.remainingSeconds - 1 : 0
-                  );
-                })(),
+          questions.forEach((question) => {
+            setTimeout(() => {
+              let clickedAmount = 0;
+              let input = question.querySelectorAll("input");
+              console.log("Input:", input);
+              if (input && input.length > 0) {
+                Array.from(input).forEach((input) =>
+                  Math.random() > 0.5 ? input.click() : null
+                ); // Click a random input
+                clickedAmount++;
               }
-            : state
-        );
 
-        // Save the updated video states back to storage
-        await GM.setValue(VIDEO_STATES_KEY, JSON.stringify(updatedVideoStates));
+              let select = question.querySelector("select");
+              console.log("select", select);
+              // We don't need to do anything here, since edgenuity doesn't require you to select anything in these types of questions.
+              if (select) clickedAmount++;
 
-        // Check if any videos have completed during this update
-        const newlyCompleted = updatedVideoStates.filter(
-          (state, index) =>
-            state.remainingSeconds <= 0 &&
-            videoStates[index].remainingSeconds > 0
-        );
+              let ifFW = question.querySelector("iframe");
+              let hintButton =
+                ifFW?.contentDocument?.getElementById("onlyButton");
+              if (hintButton) {
+                setInterval(() => {
+                  hintButton.click();
+                  clickedAmount++;
+                }, 250);
+              }
 
-        // Log any newly completed videos
-        if (newlyCompleted.length > 0) {
-          console.log("Newly completed videos:", newlyCompleted);
-          // Could add notification or visual feedback here
+              const doneButton = question.querySelectorAll("div[title='done']");
+              console.log("doneButton", doneButton);
+              console.log("clickedAmount", clickedAmount);
+              if (doneButton && doneButton.length > 0 && clickedAmount > 0) {
+                Array.from(doneButton).forEach((button) => button.click());
+                nextFrame(API);
+                setTimeout(() => {
+                  checkForStageFrame();
+                  return;
+                }, 5000);
+              }
+            }, 500);
+          });
         }
-        // ~~~~~~~~~~~~~~~~~~ Can Move Up Following Code ~~~~~~~~~~~~~~~~~~
-        // Update the display with the latest states
-        updateVideoStatesDisplay(updatedVideoStates);
+        nextFrame(API);
+        setTimeout(() => {
+          checkForStageFrame();
+          return;
+        }, 5000);
+      } else {
+        console.log("Instruction is not playing");
+      }
+    } else {
+      //   console.log("Activity already completed");
+      //   // Find the first incomplete frame and mark it as complete
+      //   const firstIncompleteIndex = API.FrameChain.framesStatus.findIndex(
+      //     (status) => status !== "complete"
+      //   );
 
-        // If no video states left, remove the overlay
-        if (videoStates.length === 0) {
-          clearInterval(updateInterval);
-          overlay.style.opacity = "0";
-          overlay.style.transform = "translateY(-20px)";
-          setTimeout(() => overlay.remove(), 300);
-        }
+      //   if (firstIncompleteIndex !== -1) {
+      //     API.FrameChain.framesStatus[firstIncompleteIndex] = "complete";
+      //   }
+      //   console.log("Next Frame:", API.FrameChain.nextFrame());
+      //   autoVideoButton.classList.remove("active", "writing");
+      nextFrame(API);
+      setTimeout(() => {
+        checkForStageFrame();
+        return;
       }, 5000);
     }
   } catch (error) {
-    console.error("Error in DOMContentLoaded:", error);
-    console.error("Error stack:", error.stack);
+    console.error("Error:", error);
+    autoAdvanceButton.classList.remove("active", "writing");
+  }
+}
+
+function nextFrame(API) {
+  API.FrameChain.nextFrame();
+}
+
+// Wait for DOM to be fully loaded before checking for the current activity
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("DOM fully loaded, executing redirect to current activity");
+  if (window.location.hostname === "student.edgenuity.com") {
+    if (GM_getValue("advanceClick") === 1) {
+      GM_setValue("advanceClick", 2);
+      redirectToCurrentActivity();
+    }
+  } else if (
+    window.location.hostname.match(/^r\d+\.core\.learn\.edgenuity\.com$/)
+  ) {
+    if (GM_getValue("advanceClick") === 2) {
+      GM_setValue("advanceClick", 0);
+      validateFunction();
+    }
   }
 });
-
-// Also add a load event listener as backup
-window.addEventListener("load", () => {
-  console.log("Window load event triggered");
-});
-
-// Add cleanup on page unload
-window.addEventListener("beforeunload", async () => {
-  const timerOverlay = document.getElementById("timerOverlay");
-  if (timerOverlay) {
-    timerOverlay.remove();
-  }
-});
-
-// Add this constant at the top of the file
-const VIDEO_STATES_KEY = "video_states";

@@ -1010,7 +1010,9 @@ export function getStageFrame() {
 }
 
 export function getIFramePreview() {
-  return document.getElementById(".iFramePreview")
-    ? document.getElementById(".iFramePreview")
+  const stageFrame = getStageFrame();
+  if (!stageFrame) return;
+  return stageFrame.contentDocument?.getElementById("iFramePreview")
+    ? stageFrame.contentDocument?.getElementById("iFramePreview")
     : null;
 }
