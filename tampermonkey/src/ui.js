@@ -201,8 +201,8 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
                 <div class="typing-dropdown" style="width: 100%;">
                   <button class="dropdown-btn" id="autoAdvanceTypeBtn">Select type</button>
                   <div class="dropdown-content">
-                    <div class="dropdown-option" data-value="single">Single Course</div>
-                    <div class="dropdown-option" data-value="all">All Courses</div>
+                    <div class="dropdown-option" data-value="activity">Activity Advance</div>
+                    <div class="dropdown-option" data-value="unlocked">Unlocked Advance</div>
                   </div>
                 </div>
                 </div>
@@ -969,18 +969,7 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
       // Set tamper value advanceClick as true
       GM_setValue("advanceClick", 1);
       GM_setValue("advanceType", selectedType);
-      if (selectedType === "All Courses") {
-        console.log(
-          "All Courses",
-          window.location.href.split("coursemap")[0] + "coursemap"
-        );
-        GM_setValue(
-          "backUrl",
-          window.location.href.split("coursemap")[0] + "coursemap"
-        );
-      }
 
-      // if (selectedType === "Single Course") {
       // Create and show loading overlay
       const loadingOverlay = document.createElement("div");
       loadingOverlay.className = "loading-overlay";
@@ -1050,7 +1039,9 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
         e.stopPropagation();
         const selectedValue = option.getAttribute("data-value");
         autoAdvanceBtn.textContent =
-          selectedValue === "single" ? "Single Course" : "All Courses";
+          selectedValue === "activity"
+            ? "Activity Advance"
+            : "Unlocked Advance";
         option.classList.remove("active");
       });
     });
@@ -1136,27 +1127,6 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
     const autoVideoItem = document.getElementById("autoVideoItem");
     const autoVideoButton = autoVideoItem?.querySelector(".menu-item-button");
 
-    function nextFrame(stageFrame) {
-      if (
-        window.getActivatedModules &&
-        window.getActivatedModules().includes("delay-advance")
-      ) {
-        let GMSettings = GM_getValue("settings", {});
-        let minDelay = GMSettings["advance-delay"]?.["Instruction"]?.[0] || 1;
-        let maxDelay = GMSettings["advance-delay"]?.["Instruction"]?.[1] || 3;
-        let delay =
-          Math.floor(Math.random() * (maxDelay - minDelay + 1)) + minDelay;
-
-        setTimeout(() => {
-          stageFrame.contentWindow.API.FrameChain.nextFrame();
-          // console.log("Next question clicked after " + delay + " seconds.");
-        }, delay * 1000);
-      } else {
-        // console.log("Without delay.");
-        stageFrame.contentWindow.API.FrameChain.nextFrame();
-      }
-    }
-
     autoVideoButton.addEventListener("click", async (e) => {
       autoVideoButton.classList.add("active", "writing");
       const autoVideoInterval = setInterval(async () => {
@@ -1202,8 +1172,8 @@ export function initDraggableMenu(onStartCallback, onExamCallback) {
               ].includes(activityTitle)
             ) {
               if (isAVideo) {
-                if (duration - currentTime < 5 && duration != 0) {
-                  nextFrame(stageFrame);
+                if (duration - currentTime < 2 && duration != 0) {
+                  nextFrame(stageFrame.contentWindow.API);
                   return;
                 } else {
                   return;
@@ -2195,7 +2165,7 @@ async function createAutoAdvanceModal(courses = []) {
       // Redirect to current path + course id
       const currentPath = window.location.href;
       console.log(
-        "path",
+        "path:",
         `${currentPath}enrollment/${selectedValue}/coursemap#`
       );
       window.location.href = `${currentPath}enrollment/${selectedValue}/coursemap#`;
@@ -2447,6 +2417,15 @@ function processStageFrame(stageFrame) {
                 clickedAmount++;
               }
 
+              let textArea = question.querySelectorAll("textarea");
+              console.log("textArea:", textArea);
+              if (textArea && textArea.length > 0) {
+                Array.from(textArea).forEach((textArea) =>
+                  Math.random() > 0.5 ? textArea.click() : null
+                ); // Click a random input
+                clickedAmount++;
+              }
+
               let select = question.querySelector("select");
               console.log("select", select);
               // We don't need to do anything here, since edgenuity doesn't require you to select anything in these types of questions.
@@ -2469,7 +2448,8 @@ function processStageFrame(stageFrame) {
                 Array.from(doneButton).forEach((button) => button.click());
                 nextFrame(API);
                 setTimeout(() => {
-                  checkForStageFrame();
+                  // checkForStageFrame();
+                  validateFunction();
                   return;
                 }, 5000);
               }
@@ -2509,7 +2489,88 @@ function processStageFrame(stageFrame) {
 }
 
 function nextFrame(API) {
-  API.FrameChain.nextFrame();
+  // Check if all frames except the current one are complete
+  if (API?.FrameChain?.framesStatus) {
+    // Check if all frames except the current one are complete
+    const currentPosition = API.FrameChain.currentPosition;
+    const allOtherFramesComplete = API.FrameChain.framesStatus.every(
+      (status, index) => index === currentPosition || status === "complete"
+    );
+
+    console.log("Frame statuses:", API.FrameChain.framesStatus);
+    console.log("All other frames complete:", allOtherFramesComplete);
+
+    if (!allOtherFramesComplete) {
+      console.log(
+        "************* Not all frames are complete. Some frames may need attention. *************"
+      );
+    } else {
+      console.log(
+        "************* All frames are complete. Proceeding to next frame. *************"
+      );
+      const advanceType = GM_getValue("advanceType");
+      if (advanceType === "Unlocked Advance") {
+        const backUrl = GM_getValue("backUrl");
+        console.log("backUrl", backUrl);
+        GM_setValue("advanceClick", 1);
+        window.location.href = backUrl;
+      } else {
+        console.log("All frames except current are complete.");
+        let buttonCheckInterval;
+        try {
+          // Set up a function to check the button status
+          const checkAndClickNextButton = () => {
+            const nextActivityButton = document.querySelector(
+              'a.footnav.goRight[data-bind*="getNextActivity"]'
+            );
+
+            // Check if the Next Activity button is disabled
+            const isDisabled =
+              nextActivityButton &&
+              nextActivityButton.classList.contains("disabled");
+
+            console.log("Next Activity button disabled:", isDisabled);
+
+            // Only proceed if the button exists and is not disabled
+            if (nextActivityButton && !isDisabled) {
+              console.log(
+                "############# Found Next Activity button, clicking it ##############"
+              );
+              nextActivityButton.click();
+              setTimeout(() => {
+                checkForStageFrame();
+                return;
+              }, 3000);
+
+              // Clear the interval once we've clicked the button
+              clearInterval(buttonCheckInterval);
+            } else if (!nextActivityButton) {
+              console.log("Next Activity button not found");
+            } else {
+              console.log("Next Activity button is disabled, waiting...");
+            }
+          };
+
+          // Check for the button every 500ms
+          buttonCheckInterval = setInterval(checkAndClickNextButton, 500);
+
+          // Clear the interval after 30 seconds to prevent it from running indefinitely
+          setTimeout(() => {
+            clearInterval(buttonCheckInterval);
+            console.log(
+              "Stopped checking for Next Activity button after timeout"
+            );
+          }, 30000);
+        } catch (error) {
+          console.error(
+            "Error finding or clicking Next Activity button:",
+            error
+          );
+        }
+      }
+    }
+    API.FrameChain.nextFrame();
+  }
 }
 
 // Wait for DOM to be fully loaded before checking for the current activity
@@ -2518,6 +2579,17 @@ document.addEventListener("DOMContentLoaded", () => {
   if (window.location.hostname === "student.edgenuity.com") {
     if (GM_getValue("advanceClick") === 1) {
       GM_setValue("advanceClick", 2);
+      const selectedType = GM_getValue("advanceType");
+      if (selectedType === "Unlocked Advance") {
+        console.log(
+          "Unlocked Advance",
+          window.location.href.split("coursemap")[0] + "coursemap"
+        );
+        GM_setValue(
+          "backUrl",
+          window.location.href.split("coursemap")[0] + "coursemap"
+        );
+      }
       redirectToCurrentActivity();
     }
   } else if (
