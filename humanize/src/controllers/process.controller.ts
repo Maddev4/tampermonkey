@@ -13,7 +13,6 @@ const groq = new Groq({ apiKey: process.env.GROQ_API_KEY || "" });
 
 // Humbot Part: Humanize text if either generated text or provided text exists
 async function humanize(generatedText: string): Promise<{
-  humanScore: number;
   output: string;
 }> {
   console.log("Calling Humbot API with text...");
