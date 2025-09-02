@@ -1,0 +1,96 @@
+warning: in the working copy of 'humanize/src/controllers/process.controller.ts', LF will be replaced by CRLF the next time Git touches it
+[1mdiff --git a/humanize/src/controllers/process.controller.ts b/humanize/src/controllers/process.controller.ts[m
+[1mindex 5aaf653..c4a520b 100644[m
+[1m--- a/humanize/src/controllers/process.controller.ts[m
+[1m+++ b/humanize/src/controllers/process.controller.ts[m
+[36m@@ -95,15 +95,11 @@[m [masync function humanize(generatedText: string): Promise<{[m
+     }, 10000); // Poll every 10 seconds[m
+   });[m
+ [m
+[31m-  const humanScore = await stealthDetect(output);[m
+[32m+[m
+   console.log("==================================================");[m
+[31m-  if (humanScore < 85) {[m
+[31m-    const result = await humanize(output);[m
+[31m-    return { humanScore, output: result?.output || "" };[m
+[31m-  } else {[m
+[31m-    console.log("Human Score is greater than 85");[m
+[31m-    return { humanScore, output };[m
+[31m-  }[m
+[32m+[m[32m  console.log("Humanization completed successfully");[m
+[32m+[m[32m  return { output };[m
+[32m+[m
+ }[m
+ [m
+ async function humbotProcessController(req: Request, res: Response) {[m
+[36m@@ -190,31 +186,7 @@[m [masync function humbotProcessController(req: Request, res: Response) {[m
+   }[m
+ }[m
+ [m
+[31m-async function stealthDetect(answer: string) {[m
+[31m-  const humbotCreateResponse = await axios.post([m
+[31m-    "https://www.stealthgpt.ai/api/trpc/input.aiCheckerScore?batch=1",[m
+[31m-    {[m
+[31m-      "0": {[m
+[31m-        json: {[m
+[31m-          feature: "ai_checker",[m
+[31m-          input: answer,[m
+[31m-        },[m
+[31m-      },[m
+[31m-    },[m
+[31m-    {[m
+[31m-      headers: {[m
+[31m-        "api-key": process.env.STEALTH_API_KEY,[m
+[31m-        "Content-Type": "application/json",[m
+[31m-      },[m
+[31m-    }[m
+[31m-  );[m
+ [m
+[31m-  const humanScore =[m
+[31m-    humbotCreateResponse.data[0]["result"]["data"]["json"]["data"]["score"];[m
+[31m-  console.log("Human Score Detected", humanScore);[m
+[31m-  console.log("**************************************");[m
+[31m-  return humanScore;[m
+[31m-}[m
+ [m
+ async function humanScoreDetectController(req: Request, res: Response) {[m
+   try {[m
+[36m@@ -234,31 +206,13 @@[m [masync function humanScoreDetectController(req: Request, res: Response) {[m
+       );[m
+     }[m
+ [m
+[31m-    // Humbot Part: Humanize text if either generated text or provided text exists[m
+[31m-    if (answers) {[m
+[31m-      if (typeof answers === "string") {[m
+[31m-        console.log("Calling Humbot API with text...");[m
+[31m-        // Create Humanization Task[m
+[31m-        const humanScore = await stealthDetect(answers);[m
+[31m-        // Return the response[m
+[31m-        res.json({[m
+[31m-          success: true,[m
+[31m-          humanScore: humanScore || null,[m
+[31m-        });[m
+[31m-      } else {[m
+[31m-        const results = [];[m
+[31m-        for (const answer of answers) {[m
+[31m-          console.log("Calling Stealth API with text...");[m
+[31m-          const humanScore = await stealthDetect(answer);[m
+[31m-          results.push(humanScore);[m
+[31m-        }[m
+[31m-        // Return the response[m
+[31m-        res.json({[m
+[31m-          success: true,[m
+[31m-          humanScore: results,[m
+[31m-        });[m
+[31m-      }[m
+[31m-    }[m
+[32m+[m[32m    // This controller is no longer needed since stealth detection has been removed[m
+[32m+[m[32m    // Return a message indicating the functionality has been removed[m
+[32m+[m[32m    res.json({[m
+[32m+[m[32m      success: false,[m
+[32m+[m[32m      message: "Stealth detection functionality has been removed from this service",[m
+[32m+[m[32m    });[m
+[32m+[m
+   } catch (error) {[m
+     console.error("Error processing request:", error);[m
+     res.status(500).json({[m

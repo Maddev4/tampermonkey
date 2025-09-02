@@ -95,15 +95,11 @@ async function humanize(generatedText: string): Promise<{
     }, 10000); // Poll every 10 seconds
   });
 
-  const humanScore = await stealthDetect(output);
+
   console.log("==================================================");
-  if (humanScore < 85) {
-    const result = await humanize(output);
-    return { humanScore, output: result?.output || "" };
-  } else {
-    console.log("Human Score is greater than 85");
-    return { humanScore, output };
-  }
+  console.log("Humanization completed successfully");
+  return { output };
+
 }
 
 async function humbotProcessController(req: Request, res: Response) {
@@ -190,31 +186,7 @@ async function humbotProcessController(req: Request, res: Response) {
   }
 }
 
-async function stealthDetect(answer: string) {
-  const humbotCreateResponse = await axios.post(
-    "https://www.stealthgpt.ai/api/trpc/input.aiCheckerScore?batch=1",
-    {
-      "0": {
-        json: {
-          feature: "ai_checker",
-          input: answer,
-        },
-      },
-    },
-    {
-      headers: {
-        "api-key": process.env.STEALTH_API_KEY,
-        "Content-Type": "application/json",
-      },
-    }
-  );
 
-  const humanScore =
-    humbotCreateResponse.data[0]["result"]["data"]["json"]["data"]["score"];
-  console.log("Human Score Detected", humanScore);
-  console.log("**************************************");
-  return humanScore;
-}
 
 async function humanScoreDetectController(req: Request, res: Response) {
   try {
@@ -234,31 +206,13 @@ async function humanScoreDetectController(req: Request, res: Response) {
       );
     }
 
-    // Humbot Part: Humanize text if either generated text or provided text exists
-    if (answers) {
-      if (typeof answers === "string") {
-        console.log("Calling Humbot API with text...");
-        // Create Humanization Task
-        const humanScore = await stealthDetect(answers);
-        // Return the response
-        res.json({
-          success: true,
-          humanScore: humanScore || null,
-        });
-      } else {
-        const results = [];
-        for (const answer of answers) {
-          console.log("Calling Stealth API with text...");
-          const humanScore = await stealthDetect(answer);
-          results.push(humanScore);
-        }
-        // Return the response
-        res.json({
-          success: true,
-          humanScore: results,
-        });
-      }
-    }
+    // This controller is no longer needed since stealth detection has been removed
+    // Return a message indicating the functionality has been removed
+    res.json({
+      success: false,
+      message: "Stealth detection functionality has been removed from this service",
+    });
+
   } catch (error) {
     console.error("Error processing request:", error);
     res.status(500).json({
