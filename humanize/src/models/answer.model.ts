@@ -12,6 +12,10 @@ export default interface Answer {
 // Create a new answer
 export const createAnswer = async (answer: Answer) => {
   const db = await connectDB(); // Reuse the connection
+  if (!db) {
+    console.warn("Database not available. Answer not saved.");
+    return { insertedId: null, acknowledged: false };
+  }
   const answersCollection = db.collection("answers");
   const result = await answersCollection.insertOne(answer);
   console.log("Answer Created:", result);
@@ -21,6 +25,10 @@ export const createAnswer = async (answer: Answer) => {
 // Get answer by questionId
 export const getAnswerByQuestion = async (question: string) => {
   const db = await connectDB(); // Reuse the connection
+  if (!db) {
+    console.warn("Database not available. Cannot retrieve answer.");
+    return null;
+  }
   const answersCollection = db.collection("answers");
   const answer = await answersCollection.findOne({ question });
   return answer;
@@ -33,6 +41,10 @@ export const updateAnswer = async (
   updatedScore: number
 ) => {
   const db = await connectDB(); // Reuse the connection
+  if (!db) {
+    console.warn("Database not available. Cannot update answer.");
+    return "Database not available";
+  }
   const answersCollection = db.collection("answers");
   const result = await answersCollection.updateOne(
     { question },
@@ -46,6 +58,10 @@ export const updateAnswer = async (
 // Delete answer by questionId
 export const deleteAnswer = async (question: string) => {
   const db = await connectDB(); // Reuse the connection
+  if (!db) {
+    console.warn("Database not available. Cannot delete answer.");
+    return "Database not available";
+  }
   const answersCollection = db.collection("answers");
   const result = await answersCollection.deleteOne({ question });
   return result.deletedCount > 0

@@ -12,7 +12,7 @@ let db: Db | null = null;
 let client: MongoClient | null = null;
 
 // Singleton pattern: Connect once and reuse the connection
-export const connectDB = async (): Promise<Db> => {
+export const connectDB = async (): Promise<Db | null> => {
   if (db) return db; // Return the existing connection if already connected
 
   if (!client) {
@@ -25,8 +25,9 @@ export const connectDB = async (): Promise<Db> => {
     db = client.db(dbName); // Get the DB instance
     return db;
   } catch (err) {
-    console.error("Error connecting to MongoDB:", err);
-    throw err;
+    console.warn("Warning: Could not connect to MongoDB. Database features will be disabled.");
+    console.warn("To enable database features, please install and start MongoDB.");
+    return null; // Return null instead of throwing error
   }
 };
 
